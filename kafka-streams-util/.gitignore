@@ -1,3 +1,4 @@
+HELP.md
 /target/
 !.mvn/wrapper/maven-wrapper.jar
 
@@ -11,7 +12,6 @@
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.mvn
 .idea
 *.iws
 *.iml
