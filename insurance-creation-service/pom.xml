@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>pl.javorex.util</groupId>
-	<artifactId>policy-creation-service</artifactId>
+	<artifactId>insurance-creation-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>policy-creation-service</name>
+	<name>insurance-creation-service</name>
 	<description>Demo project for Spring Boot</description>
 
 	<properties>
