@@ -1,4 +1,4 @@
-package pl.javorex.util.kafka.streams.event
+package pl.javorex.util.event
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty

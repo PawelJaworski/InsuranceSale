@@ -1,4 +1,4 @@
-package pl.javorex.util.policycreationservice
+package pl.javorex.util.insurance
 
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -7,7 +7,7 @@ import org.springframework.test.context.junit4.SpringRunner
 
 @RunWith(SpringRunner::class)
 @SpringBootTest
-class PolicyCreationServiceApplicationTests {
+class InsuranceCreationServiceApplicationTests {
 
 	@Test
 	fun contextLoads() {

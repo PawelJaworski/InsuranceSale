@@ -21,6 +21,18 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>pl.javorex.util</groupId>
+			<artifactId>kafka-streams-util</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>pl.javorex.insurance.proposal</groupId>
+			<artifactId>proposal-events</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
