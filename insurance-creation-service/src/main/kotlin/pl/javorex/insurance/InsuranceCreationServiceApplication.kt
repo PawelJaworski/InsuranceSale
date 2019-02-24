@@ -1,11 +1,11 @@
-package pl.javorex.insurance.proposal.event
+package pl.javorex.insurance
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class ProposalEventsApplication
+class InsuranceCreationServiceApplication
 
 fun main(args: Array<String>) {
-	runApplication<ProposalEventsApplication>(*args)
+	runApplication<InsuranceCreationServiceApplication>(*args)
 }

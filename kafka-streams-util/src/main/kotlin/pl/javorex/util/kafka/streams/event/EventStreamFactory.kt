@@ -7,7 +7,9 @@ import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.KTable
 import pl.javorex.util.event.EventEnvelope
 
-fun StreamsBuilder.newEventStream(topic: String): KStream<String, EventEnvelope> {
+typealias EventStream = KStream<String, EventEnvelope>
+
+fun StreamsBuilder.newEventStream(topic: String): EventStream {
     return this.stream(
             topic,
             Consumed.with(

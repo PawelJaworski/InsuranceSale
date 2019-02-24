@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 data class ProposalAcceptedEvent
 @JsonCreator
 constructor(
-        @JsonProperty("salesProcessUID") val salesProcessUID: String,
+        @JsonProperty("proposalId") val proposalId: String,
         @JsonProperty("insuranceProduct") val insuranceProduct: String,
         @JsonProperty("numberOfPremiums") val numberOfPremiums: Int
 )
