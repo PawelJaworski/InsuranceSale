@@ -1,6 +1,7 @@
 package pl.javorex.insurance.creation.application
 
 import junit.framework.Assert.*
+import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.kafka.streams.StreamsConfig
@@ -24,6 +25,7 @@ private const val PROPOSAL_EVENTS_TOPIC = "proposal-events-test"
 private const val PREMIUM_EVENTS_TOPIC = "premium-events-test"
 private const val POLICY_EVENTS_TOPIC = "policy-events-test"
 private const val NEW_POLICY_SAGA_TOPIC = "policy-saga-test"
+private const val INSURANCE_CREATION_ERROR_TOPIC = "insurance-creation-error-test"
 
 class PolicyCreationSagaStreamSpec {
     private lateinit var topologyTestDriver: TopologyTestDriver
@@ -33,7 +35,8 @@ class PolicyCreationSagaStreamSpec {
             PROPOSAL_EVENTS_TOPIC,
             PREMIUM_EVENTS_TOPIC,
             POLICY_EVENTS_TOPIC,
-            NEW_POLICY_SAGA_TOPIC
+            NEW_POLICY_SAGA_TOPIC,
+            INSURANCE_CREATION_ERROR_TOPIC
     )
 
     @BeforeEach
@@ -55,37 +58,56 @@ class PolicyCreationSagaStreamSpec {
 
     @Test
     fun whenAllEventsAndNoTimeoutThenSagaCompleted() {
-        val proposalAcceptedEvent = Event at 10
-        val proposalAcceptedRecord = proposalAcceptedEvent.create(
-                PROPOSAL_EVENTS_TOPIC,
-                PROPOSAL_ID,
-                pack(PROPOSAL_ID, 1, ProposalAcceptedEvent(PROPOSAL_ID, "OC", 3))
-        )
-        topologyTestDriver.pipeInput(proposalAcceptedRecord)
+        topologyTestDriver.pipe{
+            aggregateRootId = PROPOSAL_ID
+            topic = PROPOSAL_EVENTS_TOPIC
+            event = ProposalAcceptedEvent(PROPOSAL_ID, "OC", 3)
+            at = 0
+        }
 
-        val eventAt5sec = Event at 30
-        val premiumRecord = eventAt5sec.create(
-                PREMIUM_EVENTS_TOPIC,
-                PROPOSAL_ID,
-                pack(PROPOSAL_ID, 1, PremiumCalculatedEvent(PROPOSAL_ID, BigDecimal.valueOf(20)))
+        topologyTestDriver.pipe {
+            aggregateRootId = PROPOSAL_ID
+            topic = PREMIUM_EVENTS_TOPIC
+            event = PremiumCalculatedEvent(PROPOSAL_ID, BigDecimal.valueOf(20))
+            at = 10
+        }
 
-        )
-        topologyTestDriver.pipeInput(premiumRecord)
-
-        val firstRead: InsuranceCreationSaga = read(
+        val firstRead: InsuranceCreationSagaCompleted? = read(
                 POLICY_EVENTS_TOPIC
-        )!!
-        val secondRead: InsuranceCreationSaga? = read(
+        )
+        val secondRead: InsuranceCreationSagaCompleted? = read(
                 POLICY_EVENTS_TOPIC
         )
         assertNotNull(firstRead)
-        assertEquals(firstRead.premiumCalculatedEvent.amount, BigDecimal("20.0"))
+        assertEquals(firstRead!!.premiumCalculatedEvent.amount, BigDecimal("20.0"))
         assertNull(secondRead)
-     }
+    }
 
+    @Test
+    fun whenAllEventsAndTimeoutThenSagaCorrupted() {
+        topologyTestDriver.pipe{
+            aggregateRootId = PROPOSAL_ID
+            topic = PROPOSAL_EVENTS_TOPIC
+            event = ProposalAcceptedEvent(PROPOSAL_ID, "OC", 3)
+            at = 0
+        }
+
+        topologyTestDriver.pipe {
+            aggregateRootId = PROPOSAL_ID
+            topic = PREMIUM_EVENTS_TOPIC
+            event = PremiumCalculatedEvent(PROPOSAL_ID, BigDecimal.valueOf(20))
+            at = 26
+        }
+
+        val firstRead: InsuranceCreationSagaCorrupted? = read(
+                INSURANCE_CREATION_ERROR_TOPIC
+        )
+        assertNotNull(firstRead)
+        assertEquals(firstRead!!.error, "error.timeout")
+    }
     private inline fun <reified T>read(topicName: String): T? {
         val read = topologyTestDriver.readOutput(
-                POLICY_EVENTS_TOPIC,
+                topicName,
                 StringDeserializer(),
                 EventEnvelopeSerde().deserializer()
         ) ?: return null
@@ -95,15 +117,32 @@ class PolicyCreationSagaStreamSpec {
 }
 
 
+//Employee.Builder.() -> Unit
+fun TopologyTestDriver.pipe(buildRecord: ConsumerRecordBuilder.() -> Unit) {
 
-private object Event {
-    infix fun at(time: Long): ConsumerRecordFactory<String, EventEnvelope> {
-        val record =  ConsumerRecordFactory<String, EventEnvelope>(
+    val builder = ConsumerRecordBuilder()
+    builder.buildRecord()
+
+    this.pipeInput(builder.build())
+
+}
+
+class ConsumerRecordBuilder {
+    lateinit var aggregateRootId: String
+    var version: Long = 0
+    lateinit var topic: String
+    var at: Long = 0
+    lateinit var event: Any
+    fun build(): ConsumerRecord<ByteArray, ByteArray> {
+        val factory =  ConsumerRecordFactory<String, EventEnvelope>(
                 StringSerializer(),
                 EventEnvelopeSerde().serializer(),
-                Duration.ofSeconds(time).toMillis()
+                Duration.ofSeconds(at).toMillis()
         )
-
-        return record
+        return factory.create(
+                topic,
+                aggregateRootId,
+                pack(aggregateRootId, version, event)
+        )
     }
 }

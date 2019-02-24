@@ -33,7 +33,7 @@ class JsonPOJOSerializer<T> : Serializer<T> {
 
     override fun configure(props: Map<String, *>, isKey: Boolean) {}
 
-    override fun serialize(topic: String, data: T?): ByteArray? {
+    override fun serialize(topic: String?, data: T?): ByteArray? {
         if (data == null)
             return null
 
@@ -60,7 +60,7 @@ class JsonPOJODeserializer<T>(private val tClass: Class<T>) : Deserializer<T> {
 
     override fun configure(props: Map<String, *>, isKey: Boolean) {}
 
-    override fun deserialize(topic: String, bytes: ByteArray?): T? {
+    override fun deserialize(topic: String?, bytes: ByteArray?): T? {
         if (bytes == null)
             return null
 

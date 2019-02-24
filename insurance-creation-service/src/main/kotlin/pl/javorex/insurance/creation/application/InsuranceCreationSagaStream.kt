@@ -4,6 +4,7 @@ import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.*
 import org.apache.kafka.streams.kstream.*
+import org.apache.kafka.streams.kstream.Suppressed.untilWindowCloses
 import org.apache.kafka.streams.state.WindowStore
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -25,7 +26,8 @@ class InsuranceCreationSagaStream(
         @Value("\${kafka.topic.proposal-events}") private val proposalEventsTopic: String,
         @Value("\${kafka.topic.premium-events}") private val premiumEventsTopic: String,
         @Value("\${kafka.topic.policy-events}") private val policyEventsTopic: String,
-        @Value("\${kafka.topic.insurance-creation-saga-events}") private val policyCreationSagaTopic: String
+        @Value("\${kafka.topic.insurance-creation-saga-events}") private val insuranceCreationSagaTopic: String,
+        @Value("\${kafka.topic.insurance-creation-error-events}") private val insuranceCreationErrorTopic: String
 ) {
     private val props= Properties()
     private lateinit var streams: KafkaStreams
@@ -48,10 +50,10 @@ class InsuranceCreationSagaStream(
         val proposalEventStream = streamBuilder.newEventStream(proposalEventsTopic)
         val premiumEventStream = streamBuilder.newEventStream(premiumEventsTopic)
 
-        ProposalAcceptedEvent::class from proposalEventStream to policyCreationSagaTopic
-        PremiumCalculatedEvent::class from premiumEventStream to policyCreationSagaTopic
+        ProposalAcceptedEvent::class from proposalEventStream to insuranceCreationSagaTopic
+        PremiumCalculatedEvent::class from premiumEventStream to insuranceCreationSagaTopic
 
-        streamBuilder.newEventStream(policyCreationSagaTopic)
+        val saga = streamBuilder.newEventStream(insuranceCreationSagaTopic)
                 .groupByKey()
                 .windowedBy(
                         TimeWindows
@@ -70,14 +72,34 @@ class InsuranceCreationSagaStream(
                                 .withKeySerde(Serdes.StringSerde())
                                 .withValueSerde(JsonPojoSerde(Builder::class.java))
                 )
-                .toStream()
-                .filter { _, sagaBuilder -> !sagaBuilder.isCorrupted()}
-                .mapValues { sagaBuilder -> sagaBuilder.build() }
-                .map { key, saga -> KeyValue(key,  pack(key.key(), 1, saga)) }
+
+        saga.toStream()
+                .flatMapValues { sagaBuilder -> sagaBuilder.build() }
+                .map { key, saga -> KeyValue(key,  pack(key.key(), saga.version, saga)) }
                 .to(policyEventsTopic, Produced.with(
                         WindowedSerdes.timeWindowedSerdeFrom(String::class.java),
                         EventEnvelopeSerde()
                 ))
+
+
+
+        saga
+            .suppress(untilWindowCloses(Suppressed.BufferConfig.unbounded()))
+            .toStream()
+            .flatMapValues { sagaBuilder -> sagaBuilder.buildMissing() }
+            .map { key, corruptedSaga -> KeyValue(key.key(), pack(key.key(), corruptedSaga.version, corruptedSaga)) }
+            .to(insuranceCreationErrorTopic, Produced.with(
+                Serdes.StringSerde(),
+                EventEnvelopeSerde()
+            ))
+
+        saga.toStream()
+            .flatMapValues { sagaBuilder -> sagaBuilder.buildCorrupted() }
+            .map { key, corruptedSaga -> KeyValue(key,  pack(key.key(), corruptedSaga.version, corruptedSaga)) }
+            .to(insuranceCreationErrorTopic, Produced.with(
+                WindowedSerdes.timeWindowedSerdeFrom(String::class.java),
+                EventEnvelopeSerde()
+            ))
 
         return streamBuilder.build()
     }
