@@ -24,7 +24,7 @@ private const val BOOTSTRAP_SERVERS = "localhost:0000"
 private const val PROPOSAL_EVENTS_TOPIC = "proposal-events-test"
 private const val PREMIUM_EVENTS_TOPIC = "premium-events-test"
 private const val POLICY_EVENTS_TOPIC = "policy-events-test"
-private const val NEW_POLICY_SAGA_TOPIC = "policy-saga-test"
+private const val INSURANCE_CREATION_SAGA_TOPIC = "policy-saga-test"
 private const val INSURANCE_CREATION_ERROR_TOPIC = "insurance-creation-error-test"
 
 class PolicyCreationSagaStreamSpec {
@@ -35,7 +35,7 @@ class PolicyCreationSagaStreamSpec {
             PROPOSAL_EVENTS_TOPIC,
             PREMIUM_EVENTS_TOPIC,
             POLICY_EVENTS_TOPIC,
-            NEW_POLICY_SAGA_TOPIC,
+            INSURANCE_CREATION_SAGA_TOPIC,
             INSURANCE_CREATION_ERROR_TOPIC
     )
 
@@ -99,11 +99,18 @@ class PolicyCreationSagaStreamSpec {
             at = 26
         }
 
-        val firstRead: InsuranceCreationSagaCorrupted? = read(
+        val completedSaga: InsuranceCreationSagaCompleted? = read(
+                POLICY_EVENTS_TOPIC
+        )
+        val corruptedSaga: InsuranceCreationSagaCorrupted? = read(
                 INSURANCE_CREATION_ERROR_TOPIC
         )
-        assertNotNull(firstRead)
-        assertEquals(firstRead!!.error, "error.timeout")
+        assertNull(completedSaga)
+        assertNotNull(corruptedSaga)
+        assertEquals(corruptedSaga!!.error, "error.timeout")
+        assertNull(
+            read(INSURANCE_CREATION_ERROR_TOPIC)
+        )
     }
     private inline fun <reified T>read(topicName: String): T? {
         val read = topologyTestDriver.readOutput(
