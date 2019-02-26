@@ -7,6 +7,5 @@ import java.math.BigDecimal
 class PremiumCalculatedEvent
 @JsonCreator
 constructor(
-        @JsonProperty("aggregateId") val aggregateId: String,
         @JsonProperty("amount") val amount: BigDecimal
 )

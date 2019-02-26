@@ -21,6 +21,10 @@ constructor(
     fun isTypeOf(clazz: Class<*>) = clazz.simpleName == eventType
 
     fun <T>unpack(clazz: Class<T>): T = newObjectMapper().treeToValue(payload, clazz)
+
+    fun repack(event: Any): EventEnvelope {
+        return pack(aggregateId, aggregateVersion, event)
+    }
 }
 
 fun pack(aggregateId: String, aggregateVersion: Long, event: Any): EventEnvelope {

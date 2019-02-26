@@ -68,7 +68,7 @@ class PolicyCreationSagaStreamSpec {
         topologyTestDriver.pipe {
             aggregateRootId = PROPOSAL_ID
             topic = PREMIUM_EVENTS_TOPIC
-            event = PremiumCalculatedEvent(PROPOSAL_ID, BigDecimal.valueOf(20))
+            event = PremiumCalculatedEvent(BigDecimal.valueOf(20))
             at = 10
         }
 
@@ -95,7 +95,7 @@ class PolicyCreationSagaStreamSpec {
         topologyTestDriver.pipe {
             aggregateRootId = PROPOSAL_ID
             topic = PREMIUM_EVENTS_TOPIC
-            event = PremiumCalculatedEvent(PROPOSAL_ID, BigDecimal.valueOf(20))
+            event = PremiumCalculatedEvent(BigDecimal.valueOf(20))
             at = 26
         }
 
