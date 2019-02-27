@@ -1,0 +1,39 @@
+{
+  "name": "InsuranceSaleFrontend",
+  "version": "1.0.0",
+  "description": "Insurance Sale Frontend",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc --declaration --emitDeclarationOnly && babel src --out-dir lib --extensions \".ts,.tsx\"",
+    "bundle": "webpack",
+    "type-check": "tsc --noEmit",
+    "dev-server": "webpack-dev-server --mode=development --content-base=./ --inline --watch --hot --port 9900"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "react": "16.5.2",
+    "react-dom": "16.4.2",
+    "ts-loader": "^4.4.1",
+    "typesafe-actions": "^2.0.4",
+    "typescript": "^3.0.1"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0-beta.49",
+    "@babel/core": "^7.0.0-beta.55",
+    "@babel/plugin-proposal-class-properties": "^7.0.0-beta.49",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.49",
+    "@babel/preset-env": "^7.0.0-beta.49",
+    "@babel/preset-react": "^7.0.0-beta.55",
+    "@babel/preset-typescript": "^7.0.0-beta.49",
+    "@types/react": "^16.4.14",
+    "@types/react-dom": "^16.0.6",
+    "@types/react-router-dom": "^4.3.1",
+    "@types/react-router-redux": "^5.0.16",
+    "babel-loader": "^8.0.0-beta.2",
+    "webpack": "^4.16.3",
+    "webpack-cli": "^3.0.8",
+    "webpack-dev-server": "^3.1.5"
+  }
+}
