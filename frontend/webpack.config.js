@@ -27,6 +27,16 @@ module.exports = {
         minimize: false
     },
     devServer: {
+        proxy: {
+            '/proposal': {
+                target: 'http://localhost:8079',
+                pathRewrite: {'^/proposal/': '/proposal/'}
+            },
+            '/insurance': {
+                target: 'http://localhost:8078',
+                pathRewrite: {'^/insurance/': '/insurance/'}
+            }
+        },
         publicPath: '/bundle',
         compress: false,
         port: 9900

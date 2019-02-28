@@ -13,6 +13,7 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
+    "axios": "0.18.0",
     "react": "16.5.2",
     "react-dom": "16.4.2",
     "ts-loader": "^4.4.1",
