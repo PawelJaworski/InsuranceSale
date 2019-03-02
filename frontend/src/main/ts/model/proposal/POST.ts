@@ -1,13 +1,12 @@
 import axios from 'axios'
 
-
-function proposalAccepted(
+export function proposalAccepted(
     proposalId: string,
     version: number,
     insuranceProduct: string,
     numberOfPremiums: number
 ) {
-    axios.post("/proposal/accepted", {
+    axios.post("/proposal/accept", {
         proposalId: proposalId,
         version: version,
         insuranceProduct: insuranceProduct,

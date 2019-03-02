@@ -29,8 +29,8 @@ module.exports = {
     devServer: {
         proxy: {
             '/proposal': {
-                target: 'http://localhost:8079',
-                pathRewrite: {'^/proposal/': '/proposal/'}
+                target: 'http://localhost:8076',
+                pathRewrite: {'^/proposal': '/proposal'}
             },
             '/insurance': {
                 target: 'http://localhost:8078',

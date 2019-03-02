@@ -1,13 +1,22 @@
 import * as React from "react";
+import axios from "axios"
 import Message from "./Message";
+import {proposalAccepted} from "../model/proposal/POST";
 
+const PROPOSAL_ID = "proposal-1"
 export default class InsuranceCriteriaComponent extends React.Component <{}> {
     state = {
         error: "",
     }
 
+    versionId: number = undefined
+    constructor(props) {
+        super(props)
+        this.versionId = new Date().getTime()
+    }
+
     componentDidMount(): void {
-        const eventSource = new EventSource("/insurance/created/1");
+        const eventSource = new EventSource("/insurance/created/" + PROPOSAL_ID);
         eventSource.onopen = (event: MessageEvent) => {
             this.state.error = ""
             this.setState({error: this.state.error})
@@ -24,6 +33,10 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
         this.state.error = error
         this.setState({error: this.state.error})
     }
+
+    private onSubmit = (event) => {
+        proposalAccepted(PROPOSAL_ID, this.versionId, "GREAT_PRODUCT", 12)
+    }
     render() {
         return (
             <div className="container">
@@ -32,7 +45,12 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
                         <Message message = {this.state.error}/>
                     </div>
                     <div className={rowCss}>
-                        <h1>Insurance Criteria</h1>
+                        <h1 className="card-header">
+                            Insurance Criteria
+                        </h1>
+                    </div>
+                    <div className={rowCss}>
+                        <button className="btn btn-primary" onClick={this.onSubmit}>Submit</button>
                     </div>
                 </div>
             </div>
