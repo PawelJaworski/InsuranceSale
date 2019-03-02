@@ -1,9 +1,9 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import InsuranceForm from "./src/main/ts/view/InsuranceForm";
+import InsuranceCriteriaComponent from "./src/main/ts/view/InsuranceCriteriaComponent";
 
 ReactDOM.render(
-	<InsuranceForm/>,
+	<InsuranceCriteriaComponent/>,
 	document.getElementById('react-app')
 );
 
