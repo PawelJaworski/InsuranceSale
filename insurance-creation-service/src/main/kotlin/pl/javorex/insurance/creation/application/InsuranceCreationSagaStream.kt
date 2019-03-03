@@ -67,10 +67,7 @@ class InsuranceCreationSagaStream(
                 )
                 .aggregate(
                         { Builder() },
-                        { key, event, sagaBuilder ->
-                            println("PEEK $key $event")
-                            sagaBuilder.mergeEvent(event)
-                        },
+                        { _, event, sagaBuilder -> sagaBuilder.mergeEvent(event) },
                         Materialized
                                 .`as`<String, Builder, WindowStore<Bytes, ByteArray>>("insurance-creation-saga-store")
                                 .withKeySerde(Serdes.StringSerde())
@@ -79,9 +76,9 @@ class InsuranceCreationSagaStream(
 
         saga.toStream()
                 .flatMapValues { sagaBuilder -> sagaBuilder.build() }
-                .map { key, saga -> KeyValue(key,  pack(key.key(), saga.version, saga)) }
+                .map { key, saga -> KeyValue(key.key(),  pack(key.key(), saga.version, saga)) }
                 .to(policyEventsTopic, Produced.with(
-                        WindowedSerdes.timeWindowedSerdeFrom(String::class.java),
+                        Serdes.StringSerde(),
                         EventEnvelopeSerde()
                 ))
 
