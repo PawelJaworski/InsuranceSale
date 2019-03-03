@@ -15,13 +15,13 @@ data class InsuranceCreationSagaCorrupted(
         val error: String
 )
 
-class Builder {
+class InsuranceCreationSagaBuilder {
     var versions = mutableSetOf<Long>()
     var proposalAcceptedEvent = hashMapOf<Long, ProposalAcceptedEvent>()
     var premiumCalculatedEvent = hashMapOf<Long, PremiumCalculatedEvent>()
     var errors = hashMapOf<Long, String>()
 
-    fun mergeEvent(event: EventEnvelope): Builder {
+    fun mergeEvent(event: EventEnvelope): InsuranceCreationSagaBuilder {
         val version = event.aggregateVersion
         versions.add(version)
         when {
@@ -38,18 +38,6 @@ class Builder {
         return this
     }
 
-    fun isComplete(version: Long) = premiumCalculatedEvent.contains(version) && proposalAcceptedEvent.contains(version)
-
-    fun isCorrupted(version: Long) = errors.contains(version)
-
-    fun getMissed(): String = when {
-        proposalAcceptedEvent == null -> "error.proposal.accepted.missed"
-        premiumCalculatedEvent == null -> "error.premium.calculated.missed"
-        else -> {
-            "ok"
-        }
-    }
-
     fun buildMissing(): List<InsuranceCreationSagaCorrupted> {
         return versions.sorted()
                 .filter { !isComplete(it) }
@@ -63,15 +51,13 @@ class Builder {
     }
 
 
-    fun build(): List<InsuranceCreationSagaCompleted> {
+    fun buildCompleted(): List<InsuranceCreationSagaCompleted> {
         return versions.sorted()
                 .filter { isComplete(it) }
                 .map { InsuranceCreationSagaCompleted(it, proposalAcceptedEvent[it]!!, premiumCalculatedEvent[it]!!) }
     }
 
-    fun isCorrupted(): Boolean {
-        return !errors.isEmpty()
-                || proposalAcceptedEvent == null
-                || premiumCalculatedEvent == null
-    }
+    private fun isComplete(version: Long) = premiumCalculatedEvent.contains(version) && proposalAcceptedEvent.contains(version)
+
+    private fun isCorrupted(version: Long) = errors.contains(version)
 }
