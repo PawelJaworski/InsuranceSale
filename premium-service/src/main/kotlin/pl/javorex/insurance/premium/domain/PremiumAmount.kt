@@ -2,4 +2,4 @@ package pl.javorex.insurance.premium.domain
 
 import java.math.BigDecimal
 
-data class PremiumAmount(val value: BigDecimal) : ValueObject
+internal data class PremiumAmount(val value: BigDecimal) : ValueObject
