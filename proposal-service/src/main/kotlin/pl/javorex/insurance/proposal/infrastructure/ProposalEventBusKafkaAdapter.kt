@@ -34,7 +34,7 @@ private object ProducerFactory {
     fun createProducer(bootstrapServers: String): Producer<String, EventEnvelope> {
         val props = Properties()
         props[BOOTSTRAP_SERVERS_CONFIG] = bootstrapServers
-        props[CLIENT_ID_CONFIG] = "PremiumEventsProducer"
+        props[CLIENT_ID_CONFIG] = "ProposalEventsProducer"
         props[KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java!!.getName()
         props[VALUE_SERIALIZER_CLASS_CONFIG] = EventEnvelopeSerde().serializer()::class.java!!.getName()
 
