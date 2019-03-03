@@ -14,6 +14,7 @@ import pl.javorex.util.event.EventEnvelope
 import pl.javorex.util.event.pack
 import pl.javorex.util.kafka.common.serialization.JsonPojoSerde
 import pl.javorex.util.kafka.streams.event.EventEnvelopeSerde
+import pl.javorex.util.kafka.streams.event.from
 import pl.javorex.util.kafka.streams.event.newEventStream
 import java.time.Duration
 import java.util.*
@@ -50,10 +51,13 @@ class InsuranceCreationSagaStream(
         val proposalEventStream = streamBuilder.newEventStream(proposalEventsTopic)
         val premiumEventStream = streamBuilder.newEventStream(premiumEventsTopic)
 
-        ProposalAcceptedEvent::class from proposalEventStream to insuranceCreationSagaTopic
         PremiumCalculatedEvent::class from premiumEventStream to insuranceCreationSagaTopic
 
-        val saga = streamBuilder.newEventStream(insuranceCreationSagaTopic)
+        val saga = proposalEventStream
+                .through(
+                        insuranceCreationSagaTopic,
+                        Produced.with(Serdes.StringSerde(), EventEnvelopeSerde())
+                )
                 .groupByKey()
                 .windowedBy(
                         TimeWindows
@@ -81,10 +85,7 @@ class InsuranceCreationSagaStream(
                         EventEnvelopeSerde()
                 ))
 
-
-
-        saga
-            .suppress(untilWindowCloses(Suppressed.BufferConfig.unbounded()))
+        saga.suppress(untilWindowCloses(Suppressed.BufferConfig.unbounded()))
             .toStream()
             .flatMapValues { sagaBuilder -> sagaBuilder.buildMissing() }
             .map { key, corruptedSaga -> KeyValue(key.key(), pack(key.key(), corruptedSaga.version, corruptedSaga)) }
@@ -106,14 +107,3 @@ class InsuranceCreationSagaStream(
 }
 
 
-    inline infix fun <reified T : Any> KClass<T>.from(source: KStream<String, EventEnvelope>): ToTopic {
-        return ToTopic(
-                source.filter { _, event -> event.isTypeOf(T::class.java) }
-        )
-    }
-
-class ToTopic(val from: KStream<String, EventEnvelope>) {
-    infix fun to(topic: String) {
-        from.to(topic, Produced.with(Serdes.String(), EventEnvelopeSerde()))
-    }
-}

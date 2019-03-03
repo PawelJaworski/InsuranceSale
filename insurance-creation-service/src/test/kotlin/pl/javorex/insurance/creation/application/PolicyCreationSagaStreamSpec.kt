@@ -123,8 +123,6 @@ class PolicyCreationSagaStreamSpec {
     }
 }
 
-
-//Employee.Builder.() -> Unit
 fun TopologyTestDriver.pipe(buildRecord: ConsumerRecordBuilder.() -> Unit) {
 
     val builder = ConsumerRecordBuilder()

@@ -9,22 +9,16 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
 
-
 data class EventEnvelope
 @JsonCreator
 constructor(
         @JsonProperty("aggregateId") val aggregateId: String,
         @JsonProperty("aggregateVersion") val aggregateVersion: Long,
         @JsonProperty("eventType") val eventType: String,
-        @JsonProperty("payload") val payload: JsonNode) {
-
+        @JsonProperty("payload") val payload: JsonNode
+) {
     fun isTypeOf(clazz: Class<*>) = clazz.simpleName == eventType
-
     fun <T>unpack(clazz: Class<T>): T = newObjectMapper().treeToValue(payload, clazz)
-
-    fun repack(event: Any): EventEnvelope {
-        return pack(aggregateId, aggregateVersion, event)
-    }
 }
 
 fun pack(aggregateId: String, aggregateVersion: Long, event: Any): EventEnvelope {

@@ -5,7 +5,9 @@ import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.Consumed
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.KTable
+import org.apache.kafka.streams.kstream.Produced
 import pl.javorex.util.event.EventEnvelope
+import kotlin.reflect.KClass
 
 typealias EventStream = KStream<String, EventEnvelope>
 
