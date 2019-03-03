@@ -2,6 +2,6 @@ package pl.javorex.insurance.proposal.application
 
 import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 
-interface EventBus {
+interface ProposalEventBus {
     fun emit(proposalAccepted: ProposalAcceptedEvent, version: Long)
 }

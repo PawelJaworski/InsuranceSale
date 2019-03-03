@@ -4,7 +4,7 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerConfig.*
 import org.apache.kafka.clients.producer.ProducerRecord
-import pl.javorex.insurance.proposal.application.EventBus
+import pl.javorex.insurance.proposal.application.ProposalEventBus
 import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Value
@@ -15,10 +15,10 @@ import pl.javorex.util.event.EventEnvelope
 import pl.javorex.util.event.pack
 
 @Service
-class EventBusKafkaAdapter(
+class ProposalEventBusKafkaAdapter(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
         @Value("\${kafka.topic.proposal-events}") private val proposalEventsTopic: String
-) : EventBus {
+) : ProposalEventBus {
     private val producer = ProducerFactory.createProducer(bootstrapServers)
 
     override fun emit(proposalAccepted: ProposalAcceptedEvent, version: Long) {
