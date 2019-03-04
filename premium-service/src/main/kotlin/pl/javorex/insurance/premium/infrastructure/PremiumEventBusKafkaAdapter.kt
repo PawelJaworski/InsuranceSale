@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import pl.javorex.insurance.premium.application.PremiumEventBus
 import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
+import pl.javorex.insurance.premium.domain.event.PremiumEvent
 import pl.javorex.util.event.EventEnvelope
 import pl.javorex.util.event.pack
 import pl.javorex.util.kafka.streams.event.EventEnvelopeSerde
@@ -20,7 +21,7 @@ class PremiumEventBusKafkaAdapter(
         @Value("\${kafka.topic.premium-events}") private val premiumEventsTopic: String
 ) : PremiumEventBus {
     override fun emit(
-            premiumCalculatedEvent: PremiumCalculatedEvent,
+            premiumCalculatedEvent: PremiumEvent,
             aggregateId: String,
             aggregateVersion: Long
     ) {

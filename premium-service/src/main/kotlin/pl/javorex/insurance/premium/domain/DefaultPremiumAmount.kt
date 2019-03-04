@@ -3,9 +3,9 @@ package pl.javorex.insurance.premium.domain
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-internal object CalculateDefaultPremiumAmount : PremiumPolicy {
+internal object DefaultPremiumAmount : PremiumCalculationPolicy {
     private val overallPremium: BigDecimal = BigDecimal.TEN
-    fun `for`(numberOfPremium: NumberOfPremium): PremiumAmount {
+    override fun `for`(numberOfPremium: NumberOfPremium): PremiumAmount {
         val value = overallPremium.divide(
                 BigDecimal.valueOf(numberOfPremium.value.toLong()),
                 RoundingMode.HALF_UP
