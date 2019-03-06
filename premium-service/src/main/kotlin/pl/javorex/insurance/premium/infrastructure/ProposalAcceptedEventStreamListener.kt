@@ -30,7 +30,13 @@ class ProposalAcceptedEventStreamListener(
     fun init() {
         val topology = createTopology(props)
         streams = KafkaStreams(topology, props)
+        //streams.cleanUp()
         streams.start()
+
+        Runtime.getRuntime()
+                .addShutdownHook(
+                        Thread(Runnable { streams.close() })
+                )
     }
 
     fun createTopology(props: Properties): Topology {
