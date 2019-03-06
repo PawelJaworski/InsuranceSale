@@ -9,6 +9,8 @@ import org.apache.kafka.streams.state.WindowStore
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
+import pl.javorex.insurance.premium.domain.event.PremiumCalculationFailedEvent
+import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 import pl.javorex.util.event.EventEnvelope
 import pl.javorex.util.event.pack
 import pl.javorex.util.kafka.common.serialization.JsonPojoSerde
@@ -34,6 +36,7 @@ class InsuranceCreationSagaStream(
     init {
         props[StreamsConfig.APPLICATION_ID_CONFIG] = "policy-service"
         props[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServers
+        props[StreamsConfig.COMMIT_INTERVAL_MS_CONFIG] = "2000"
     }
 
     @PostConstruct
@@ -48,12 +51,13 @@ class InsuranceCreationSagaStream(
 
         val premiumEventStream = streamBuilder.newEventStream(premiumEventsTopic)
         PremiumCalculatedEvent::class from premiumEventStream to insuranceCreationSagaTopic
+        PremiumCalculationFailedEvent::class from premiumEventStream to insuranceCreationSagaTopic
 
         val sagaEvents = groupSagaEvents(
             streamBuilder.newEventStream(proposalEventsTopic)
         )
         processCompleted(sagaEvents)
-        processMissing(sagaEvents)
+        //processMissing(sagaEvents)
         processCorrupted(sagaEvents)
 
         return streamBuilder.build()
@@ -61,6 +65,7 @@ class InsuranceCreationSagaStream(
 
     private fun groupSagaEvents(proposalEventStream: KStream<String, EventEnvelope>) =
         proposalEventStream
+                .filter{ _, event -> event.isTypeOf(ProposalAcceptedEvent::class.java)}
                 .through(
                         insuranceCreationSagaTopic,
                         Produced.with(Serdes.StringSerde(), EventEnvelopeSerde())
@@ -105,9 +110,9 @@ class InsuranceCreationSagaStream(
     private fun processCorrupted(sagaEventGroup: KTable<Windowed<String>, InsuranceCreationSagaBuilder>) {
         sagaEventGroup.toStream()
                 .flatMapValues { sagaBuilder -> sagaBuilder.buildCorrupted() }
-                .map { key, corruptedSaga -> KeyValue(key,  pack(key.key(), corruptedSaga.version, corruptedSaga)) }
+                .map { key, corruptedSaga -> KeyValue(key.key(),  pack(key.key(), corruptedSaga.version, corruptedSaga)) }
                 .to(insuranceCreationErrorTopic, Produced.with(
-                        WindowedSerdes.timeWindowedSerdeFrom(String::class.java),
+                        Serdes.StringSerde(),
                         EventEnvelopeSerde()
                 ))
     }

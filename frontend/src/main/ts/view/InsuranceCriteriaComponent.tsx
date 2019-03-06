@@ -16,7 +16,7 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
     }
 
     componentDidMount(): void {
-        const eventSource = new EventSource("/insurance/created/" + PROPOSAL_ID);
+        const eventSource = new EventSource("/insurance/creation/error/" + PROPOSAL_ID);
         eventSource.onopen = (event: MessageEvent) => {
             this.state.error = ""
             this.setState({error: this.state.error})
@@ -35,7 +35,7 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
     }
 
     private onSubmit = (event) => {
-        proposalAccepted(PROPOSAL_ID, this.versionId, "GREAT_PRODUCT", 12)
+        proposalAccepted(PROPOSAL_ID, this.versionId, "GREAT_PRODUCT", 1)
     }
     render() {
         return (

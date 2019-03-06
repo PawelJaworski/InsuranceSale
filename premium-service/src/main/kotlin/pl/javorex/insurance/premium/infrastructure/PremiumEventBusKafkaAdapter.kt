@@ -27,6 +27,7 @@ class PremiumEventBusKafkaAdapter(
     ) {
         val record = ProducerRecord<String, EventEnvelope>(
                 premiumEventsTopic,
+                aggregateId,
                 pack(aggregateId, aggregateVersion, premiumCalculatedEvent)
         )
         producer.send(record)

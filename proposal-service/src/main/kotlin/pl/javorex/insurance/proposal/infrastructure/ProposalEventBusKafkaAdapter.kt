@@ -24,6 +24,7 @@ class ProposalEventBusKafkaAdapter(
     override fun emit(proposalAccepted: ProposalAcceptedEvent, version: Long) {
         val record = ProducerRecord<String, EventEnvelope>(
                 proposalEventsTopic,
+                proposalAccepted.proposalId,
                 pack(proposalAccepted.proposalId, version, proposalAccepted)
         )
         producer.send(record)

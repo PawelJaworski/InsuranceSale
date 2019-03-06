@@ -1,6 +1,7 @@
 package pl.javorex.insurance.creation.application
 
 import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
+import pl.javorex.insurance.premium.domain.event.PremiumCalculationFailedEvent
 import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 import pl.javorex.util.event.EventEnvelope
 
@@ -25,6 +26,8 @@ class InsuranceCreationSagaBuilder {
         val version = event.aggregateVersion
         versions.add(version)
         when {
+            event.isTypeOf(PremiumCalculationFailedEvent::class.java) ->
+                errors[version] = event.unpack(PremiumCalculationFailedEvent::class.java).error
             event.isTypeOf(ProposalAcceptedEvent::class.java) && proposalAcceptedEvent.contains(version) ->
                 errors[version] = "error.double.proposal.accepted"
             event.isTypeOf(ProposalAcceptedEvent::class.java) ->
