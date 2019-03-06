@@ -139,15 +139,17 @@ class ConsumerRecordBuilder {
     var at: Long = 0
     lateinit var event: Any
     fun build(): ConsumerRecord<ByteArray, ByteArray> {
+        val timestamp = Duration.ofSeconds(at).toMillis()
         val factory =  ConsumerRecordFactory<String, EventEnvelope>(
                 StringSerializer(),
                 EventEnvelopeSerde().serializer(),
-                Duration.ofSeconds(at).toMillis()
+                timestamp
         )
         return factory.create(
                 topic,
                 aggregateRootId,
                 pack(aggregateRootId, version, event)
+                        .withTimestamp(timestamp)
         )
     }
 }

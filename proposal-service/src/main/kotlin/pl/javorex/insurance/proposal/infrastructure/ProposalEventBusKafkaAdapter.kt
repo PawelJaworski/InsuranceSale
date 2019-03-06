@@ -14,6 +14,7 @@ import java.util.*
 import pl.javorex.util.event.EventEnvelope
 import pl.javorex.util.event.pack
 
+private val NO_PARTITION = null
 @Service
 class ProposalEventBusKafkaAdapter(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
@@ -22,12 +23,14 @@ class ProposalEventBusKafkaAdapter(
     private val producer = ProducerFactory.createProducer(bootstrapServers)
 
     override fun emit(proposalAccepted: ProposalAcceptedEvent, version: Long) {
-        val record = ProducerRecord<String, EventEnvelope>(
-                proposalEventsTopic,
-                proposalAccepted.proposalId,
-                pack(proposalAccepted.proposalId, version, proposalAccepted)
+        val timestamp = System.currentTimeMillis()
+        val key = proposalAccepted.proposalId
+        val value = pack(proposalAccepted.proposalId, version, proposalAccepted)
+                .withTimestamp(timestamp)
+
+        producer.send(
+                ProducerRecord(proposalEventsTopic, NO_PARTITION, timestamp, key, value)
         )
-        producer.send(record)
     }
 }
 
