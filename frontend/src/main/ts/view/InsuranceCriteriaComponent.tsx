@@ -35,7 +35,7 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
     }
 
     private onSubmit = (event) => {
-        proposalAccepted(PROPOSAL_ID, this.versionId, "GREAT_PRODUCT", 1)
+        proposalAccepted(PROPOSAL_ID, this.versionId, "GREAT_PRODUCT", 12)
     }
     render() {
         return (

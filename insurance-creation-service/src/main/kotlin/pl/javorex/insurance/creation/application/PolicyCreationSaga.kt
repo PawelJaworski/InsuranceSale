@@ -17,50 +17,53 @@ data class InsuranceCreationSagaCorrupted(
 )
 
 class InsuranceCreationSagaBuilder {
-    var versions = mutableSetOf<Long>()
-    var proposalAcceptedEvent = hashMapOf<Long, ProposalAcceptedEvent>()
-    var premiumCalculatedEvent = hashMapOf<Long, PremiumCalculatedEvent>()
+    var version: Long? = null
+    var proposalAcceptedEvent: ProposalAcceptedEvent? = null
+    var premiumCalculatedEvent: PremiumCalculatedEvent? = null
     var errors = hashMapOf<Long, String>()
 
     fun mergeEvent(event: EventEnvelope): InsuranceCreationSagaBuilder {
-        val version = event.aggregateVersion
-        versions.add(version)
+        when {
+            version != null && version!! < event.aggregateVersion -> {
+                errors[version!!] = "request.outdated"
+                reset()
+            }
+        }
+        if (version != null && version!! < event.aggregateVersion) {
+
+        }
+        version = event.aggregateVersion
         when {
             event.isTypeOf(PremiumCalculationFailedEvent::class.java) ->
-                errors[version] = event.unpack(PremiumCalculationFailedEvent::class.java).error
-            event.isTypeOf(ProposalAcceptedEvent::class.java) && proposalAcceptedEvent.contains(version) ->
-                errors[version] = "error.double.proposal.accepted"
+                errors[version!!] = event.unpack(PremiumCalculationFailedEvent::class.java).error
+            event.isTypeOf(ProposalAcceptedEvent::class.java) && proposalAcceptedEvent != null ->
+                errors[version!!] = "error.double.proposal.accepted"
             event.isTypeOf(ProposalAcceptedEvent::class.java) ->
-                proposalAcceptedEvent[version] = event.unpack(ProposalAcceptedEvent::class.java)
-            event.isTypeOf(PremiumCalculatedEvent::class.java) && premiumCalculatedEvent.contains(version) ->
-                errors[version] = "error.double.premium.calculated"
+                proposalAcceptedEvent = event.unpack(ProposalAcceptedEvent::class.java)
+            event.isTypeOf(PremiumCalculatedEvent::class.java) && premiumCalculatedEvent != null ->
+                errors[version!!] = "error.double.premium.calculated"
             event.isTypeOf(PremiumCalculatedEvent::class.java) ->
-                premiumCalculatedEvent[version] = event.unpack(PremiumCalculatedEvent::class.java)
+                premiumCalculatedEvent = event.unpack(PremiumCalculatedEvent::class.java)
         }
 
         return this
     }
 
-    fun buildMissing(): List<InsuranceCreationSagaCorrupted> {
-        return versions.sorted()
-                .filter { !isComplete(it) }
-                .map { InsuranceCreationSagaCorrupted(it, "error.timeout") }
-    }
-
     fun buildCorrupted(): List<InsuranceCreationSagaCorrupted> {
-        return versions.sorted()
-                .filter { isCorrupted(it) }
+        return errors.keys.sorted()
                 .map { InsuranceCreationSagaCorrupted(it, errors[it]!!) }
     }
 
 
-    fun buildCompleted(): List<InsuranceCreationSagaCompleted> {
-        return versions.sorted()
-                .filter { isComplete(it) }
-                .map { InsuranceCreationSagaCompleted(it, proposalAcceptedEvent[it]!!, premiumCalculatedEvent[it]!!) }
+    fun buildCompleted() =
+            InsuranceCreationSagaCompleted(version!!, proposalAcceptedEvent!!, premiumCalculatedEvent!!)
+
+    private fun reset() {
+        this.proposalAcceptedEvent = null
+        this.premiumCalculatedEvent = null
     }
 
-    private fun isComplete(version: Long) = premiumCalculatedEvent.contains(version) && proposalAcceptedEvent.contains(version)
+    fun isComplete() = premiumCalculatedEvent != null && proposalAcceptedEvent != null
 
     private fun isCorrupted(version: Long) = errors.contains(version)
 }
