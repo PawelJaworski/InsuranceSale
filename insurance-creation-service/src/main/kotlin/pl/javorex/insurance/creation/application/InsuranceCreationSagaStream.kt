@@ -19,6 +19,9 @@ import java.time.Duration
 import java.util.*
 import javax.annotation.PostConstruct
 
+const val TIME_WINDOW_IN_SEC = 10L
+const val TIME_WINDOW_ADVANCED_BY_IN_SEC = 2L
+
 @Service
 class InsuranceCreationSagaStream(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
@@ -80,8 +83,8 @@ class InsuranceCreationSagaStream(
                 .groupByKey()
                 .windowedBy(
                         TimeWindows
-                                .of(Duration.ofSeconds(10))
-                                .advanceBy(Duration.ofSeconds(2))
+                                .of(Duration.ofSeconds(TIME_WINDOW_IN_SEC))
+                                .advanceBy(Duration.ofSeconds(TIME_WINDOW_ADVANCED_BY_IN_SEC))
                                 .grace(Duration.ZERO)
                 )
                 .aggregate(
@@ -94,8 +97,17 @@ class InsuranceCreationSagaStream(
                         { _, event, saga -> saga.mergeEvent(event) },
                         Materialized.with(Serdes.StringSerde(), JsonPojoSerde(EventSaga::class.java))
                 )
+                .filter{ key, saga ->
+                    val nextWindowStart = key.window().start() + TIME_WINDOW_ADVANCED_BY_IN_SEC * 1000
+                    saga.startedBefore(nextWindowStart)
+                }
     private fun processCompleted(sagaEventGroup: KTable<Windowed<String>, EventSaga>) {
         sagaEventGroup.toStream()
+                .filter{ _, saga -> saga != null }
+                .filter{ key, saga ->
+                    val nextWindowStart = key.window().start() + TIME_WINDOW_ADVANCED_BY_IN_SEC * 1000
+                    saga.startedBefore(nextWindowStart)
+                }
                 .filter{ _, saga -> saga.isComplete() }
                 .mapValues {
                     saga ->
@@ -114,7 +126,8 @@ class InsuranceCreationSagaStream(
 
     private fun processCorrupted(sagaEventGroup: KTable<Windowed<String>, EventSaga>) {
         sagaEventGroup.toStream()
-                .filter{ _, saga -> saga.errors.isNotEmpty()}
+                .filter{ _, saga -> saga != null }
+                .filter{ _, saga -> saga.hasErrors()}
                 .flatMapValues { saga ->
                     saga.takeErrors()
                         .map { InsuranceCreationSagaCorrupted(saga.version.number, it) }

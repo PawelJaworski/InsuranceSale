@@ -1,14 +1,10 @@
 package pl.javorex.insurance.creation.application
 
 import pl.javorex.util.event.EventEnvelope
-import pl.javorex.util.function.Failure
-import pl.javorex.util.function.Success
-import pl.javorex.util.function.Try
 
 private val LACK_OF_EVENT = null
 
 class EventSaga(
-        var startedTimestamp: Long? = null,
         var version: SagaVersion = SagaVersion(),
         var errors: HashMap<Long, String> = hashMapOf(),
         var events: SagaEvents = SagaEvents()
@@ -25,7 +21,7 @@ class EventSaga(
         return this
     }
     fun expectErrors(clazz: Class<*>): EventSaga {
-        events.expectedErrors["${clazz.simpleName}"] = LACK_OF_EVENT
+        events.expectedErrors += clazz.simpleName
 
         return this
     }
@@ -59,11 +55,17 @@ class EventSaga(
             return this
         }
 
-        val set = events.trySet(event)
-        if (set.isFailure()) {
+        events.collectOrHandleError(event) {
             errors[version.number] = event.payload["error"].asText()
         }
+
         return this
+    }
+
+    fun startedBefore(timestamp: Long): Boolean {
+        val startedTimestamp = events.startedTimestamp
+
+        return startedTimestamp != null && startedTimestamp!! < timestamp
     }
 
     fun isComplete() = events.starting.none { it.value == LACK_OF_EVENT}
@@ -91,29 +93,24 @@ data class SagaVersion(var number: Long = SMALLEST_VERSION_NO) {
 }
 data class SagaEvents(
         val starting: HashMap<String, EventEnvelope?> = hashMapOf(),
+        var startedTimestamp: Long? = null,
         val required: HashMap<String, EventEnvelope?> = hashMapOf(),
-        val expectedErrors: HashMap<String, EventEnvelope?> = hashMapOf()
+        val expectedErrors: HashSet<String> = hashSetOf()
 ) {
     fun contains(eventType: String) = starting.contains(eventType)
             || required.contains(eventType)
-            || expectedErrors.containsKey(eventType)
+            || expectedErrors.contains(eventType)
 
-    fun trySet(event: EventEnvelope) : Try<Nothing?> {
+    fun collectOrHandleError(event: EventEnvelope, onErrorConsumer: (EventEnvelope) -> Unit) {
         val eventType = event.eventType
-        if (expectedErrors.contains(eventType)) {
-            if (event.payload.has("error")) {
-                return Failure(
-                        event.payload["error"].asText()
-                )
-            } else {
-                return Failure(eventType)
+        when {
+            expectedErrors.contains(eventType) -> onErrorConsumer.invoke(event)
+            starting.contains(eventType) -> {
+                starting[eventType] = event
+                startedTimestamp = event.timestamp
             }
-        } else if(starting.contains(eventType)) {
-            starting[eventType] = event
-        } else {
-            required[eventType] = event
+            required.contains(eventType) -> required[eventType] = event
         }
-        return Success(null)
     }
     inline fun <reified T>get(event: Class<T>): T {
             val eventType = event.simpleName
