@@ -35,7 +35,7 @@ class PolicyCreationFluxKafkaAdapter(
             .filter{ it.key() == proposalId }
             .map { it.value() }
             .map { it["payload"]["error"] }
-            .map { it.toString() }
+            .map { it.asText() }
 
     private fun receiverOptions(topics: Collection<String>): ReceiverOptions<String, ObjectNode> {
         return receiverOptions()

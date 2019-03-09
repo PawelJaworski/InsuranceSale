@@ -1,10 +1,8 @@
 package pl.javorex.insurance.creation.application
 
 import org.apache.kafka.common.serialization.Serdes
-import org.apache.kafka.common.utils.Bytes
 import org.apache.kafka.streams.*
 import org.apache.kafka.streams.kstream.*
-import org.apache.kafka.streams.state.WindowStore
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
@@ -88,15 +86,15 @@ class InsuranceCreationSagaStream(
                 )
                 .aggregate(
                         {
-                            EventSagaFlow()
-                                    .withSubEvent(ProposalAcceptedEvent::class.java)
-                                    .withSubEvent(PremiumCalculatedEvent::class.java)
-                                    .expectingErrors(PremiumCalculationFailedEvent::class.java)
+                            EventSaga()
+                                    .startsWith(ProposalAcceptedEvent::class.java)
+                                    .requires(PremiumCalculatedEvent::class.java)
+                                    .expectErrors(PremiumCalculationFailedEvent::class.java)
                         },
                         { _, event, saga -> saga.mergeEvent(event) },
-                        Materialized.with(Serdes.StringSerde(), JsonPojoSerde(EventSagaFlow::class.java))
+                        Materialized.with(Serdes.StringSerde(), JsonPojoSerde(EventSaga::class.java))
                 )
-    private fun processCompleted(sagaEventGroup: KTable<Windowed<String>, EventSagaFlow>) {
+    private fun processCompleted(sagaEventGroup: KTable<Windowed<String>, EventSaga>) {
         sagaEventGroup.toStream()
                 .filter{ _, saga -> saga.isComplete() }
                 .mapValues {
@@ -114,7 +112,7 @@ class InsuranceCreationSagaStream(
                 ))
     }
 
-    private fun processCorrupted(sagaEventGroup: KTable<Windowed<String>, EventSagaFlow>) {
+    private fun processCorrupted(sagaEventGroup: KTable<Windowed<String>, EventSaga>) {
         sagaEventGroup.toStream()
                 .filter{ _, saga -> saga.errors.isNotEmpty()}
                 .flatMapValues { saga ->
