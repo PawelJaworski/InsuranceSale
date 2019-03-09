@@ -1,6 +1,9 @@
 package pl.javorex.insurance.creation.application
 
 import pl.javorex.util.event.EventEnvelope
+import pl.javorex.util.function.Failure
+import pl.javorex.util.function.Success
+import pl.javorex.util.function.Try
 
 private val LACK_OF_EVENT = null
 
@@ -54,16 +57,11 @@ class EventSaga(
 
         if (isComplete()) {
             return this
-        } else if (events.expectedErrors.contains(eventType)) {
-            if (event.payload.has("error")) {
-                errors[version.number] = event.payload["error"].asText()
-            } else {
-                errors[version.number] = "$eventType"
-            }
-        } else if(events.starting.contains(eventType)) {
-            events.starting[eventType] = event
-        } else {
-            events.required[eventType] = event
+        }
+
+        val set = events.trySet(event)
+        if (set.isFailure()) {
+            errors[version.number] = event.payload["error"].asText()
         }
         return this
     }
@@ -99,6 +97,24 @@ data class SagaEvents(
     fun contains(eventType: String) = starting.contains(eventType)
             || required.contains(eventType)
             || expectedErrors.containsKey(eventType)
+
+    fun trySet(event: EventEnvelope) : Try<Nothing?> {
+        val eventType = event.eventType
+        if (expectedErrors.contains(eventType)) {
+            if (event.payload.has("error")) {
+                return Failure(
+                        event.payload["error"].asText()
+                )
+            } else {
+                return Failure(eventType)
+            }
+        } else if(starting.contains(eventType)) {
+            starting[eventType] = event
+        } else {
+            required[eventType] = event
+        }
+        return Success(null)
+    }
     inline fun <reified T>get(event: Class<T>): T {
             val eventType = event.simpleName
             return when {
