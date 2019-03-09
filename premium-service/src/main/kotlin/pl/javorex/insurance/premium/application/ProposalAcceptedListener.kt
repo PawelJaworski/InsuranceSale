@@ -6,9 +6,9 @@ import pl.javorex.insurance.premium.domain.premiumAmount
 import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
 import pl.javorex.insurance.premium.domain.event.PremiumCalculationFailedEvent
 import pl.javorex.insurance.premium.domain.event.PremiumEvent
-import pl.javorex.insurance.premium.infrastructure.Failure
-import pl.javorex.insurance.premium.infrastructure.Success
-import pl.javorex.insurance.premium.infrastructure.Try
+import pl.javorex.util.function.Failure
+import pl.javorex.util.function.Success
+import pl.javorex.util.function.Try
 import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 
 class ProposalAcceptedListener (

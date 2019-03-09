@@ -1,6 +1,5 @@
 package pl.javorex.insurance.premium.domain
 
-import pl.javorex.insurance.premium.infrastructure.Try
 import java.math.BigDecimal
 
 internal fun premiumAmount() = PremiumAmountBuilder()

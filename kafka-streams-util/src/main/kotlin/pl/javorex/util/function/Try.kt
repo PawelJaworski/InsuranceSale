@@ -1,4 +1,4 @@
-package pl.javorex.insurance.premium.infrastructure
+package pl.javorex.util.function
 
 data class Success<out T>(val success: T) : Try<T>() {
     override fun isSuccess(): Boolean = true
