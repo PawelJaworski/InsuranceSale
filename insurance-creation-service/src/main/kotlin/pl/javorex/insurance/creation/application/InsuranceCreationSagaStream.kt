@@ -82,8 +82,8 @@ class InsuranceCreationSagaStream(
                 .groupByKey()
                 .windowedBy(
                         TimeWindows
-                                .of(Duration.ofSeconds(25))
-                                .advanceBy(Duration.ofSeconds(5))
+                                .of(Duration.ofSeconds(10))
+                                .advanceBy(Duration.ofSeconds(2))
                                 .grace(Duration.ZERO)
                 )
                 .aggregate(
@@ -122,6 +122,7 @@ class InsuranceCreationSagaStream(
                         .map { InsuranceCreationSagaCorrupted(saga.version.number, it) }
                 }
                 .map { key, corruptedSaga -> KeyValue(key.key(),  pack(key.key(), corruptedSaga.version, corruptedSaga)) }
+                .peek{ key, value -> println("[PEEKING] $key $value")}
                 .to(insuranceCreationErrorTopic, Produced.with(
                         Serdes.StringSerde(),
                         EventEnvelopeSerde()

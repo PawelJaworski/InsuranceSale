@@ -6,8 +6,8 @@ private val LACK_OF_EVENT = null
 
 class EventSagaFlow(
         var startedTimestamp: Long? = null,
-        var version: SagaVersion = SagaVersion(SMALLEST_VERSION_NO),
-        var errors: MutableMap<Long, String> = hashMapOf(),
+        var version: SagaVersion = SagaVersion(),
+        var errors: HashMap<Long, String> = hashMapOf(),
         var events: SagaEvents = SagaEvents(),
         var terminated: Boolean = false
 ) {
@@ -25,29 +25,35 @@ class EventSagaFlow(
 
     fun mergeEvent(event: EventEnvelope): EventSagaFlow {
         val eventType = event.eventType
-        check(!events.contains(eventType)) {
+        check(events.contains(eventType)) {
             throw IllegalStateException("Unrecognized event of type $eventType")
         }
 
         val eventVersion = SagaVersion(event.aggregateVersion)
         if (version.isMoreCurrentThan(eventVersion)) {
-            errors[eventVersion.number] += "Request outdated"
+            errors[eventVersion.number] = "Request outdated"
             return this
         }
 
         if (version.isLessCurrentThan(eventVersion)) {
-            errors[version.number] += "Request outdated"
+            errors[version.number] = "Request outdated"
             version = eventVersion
         }
 
         if (events.mandatory.contains(eventType) && events.mandatory[eventType] != LACK_OF_EVENT) {
-            errors[version.number] += "Double event $eventType"
+            errors[version.number] = "Double event $eventType"
 
             return this
         }
 
-        if (events.expectedErrors.contains(eventType)) {
-            errors[version.number] += "${event.unpack(Class.forName(eventType))}"
+        if (isComplete()) {
+            return this
+        } else if (events.expectedErrors.contains(eventType)) {
+            if (event.payload.has("error")) {
+                errors[version.number] = "${event.payload["error"].asText()}"
+            } else {
+                errors[version.number] = "$eventType"
+            }
         } else {
             events.mandatory[eventType] = event
         }
@@ -77,12 +83,12 @@ data class SagaVersion(var number: Long = SMALLEST_VERSION_NO) {
     init{
         check(number >= 0) {"Saga-version-number cannot be less than 1"}
     }
-    fun isMoreCurrentThan(otherVersion: SagaVersion) = number > otherVersion.number
-    fun isLessCurrentThan(otherVersion: SagaVersion) = number < otherVersion.number
+    fun isMoreCurrentThan(other: SagaVersion) = number > other.number
+    fun isLessCurrentThan(other: SagaVersion) = number != SMALLEST_VERSION_NO && number < other.number
 }
 data class SagaEvents(
-        var mandatory: HashMap<String, EventEnvelope?> = hashMapOf(),
-        var expectedErrors: HashMap<String, EventEnvelope?> = hashMapOf()
+        val mandatory: HashMap<String, EventEnvelope?> = hashMapOf(),
+        val expectedErrors: HashMap<String, EventEnvelope?> = hashMapOf()
 ) {
     fun contains(eventType: String) = mandatory.contains(eventType) || expectedErrors.containsKey(eventType)
     inline fun <reified T>get(event: Class<T>): T =

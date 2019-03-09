@@ -23,13 +23,16 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
         }
 
         eventSource.onmessage = (event: MessageEvent) => {
-            this.state.error = event.data;
+            const message = event.data
+            console.log("messaging " + message)
+            this.state.error = message;
             this.setState({error: this.state.error});
         }
         eventSource.onerror = (error: any) =>  this.displayError("Policy service error")
     }
 
     private displayError(error: string) {
+        console.log("displaying " + error)
         this.state.error = error
         this.setState({error: this.state.error})
     }
