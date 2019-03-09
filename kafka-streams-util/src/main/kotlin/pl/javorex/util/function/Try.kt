@@ -5,7 +5,7 @@ data class Success<out T>(val success: T) : Try<T>() {
     override fun isFailure(): Boolean = false
 }
 
-data class Failure<out T>(val error: Throwable) : Try<T>() {
+data class Failure<out T>(val error: String) : Try<T>() {
     override fun isSuccess(): Boolean = false
     override fun isFailure(): Boolean = true
 }
@@ -19,7 +19,7 @@ sealed class Try<out T> {
             return try {
                 Success(body())
             } catch (e: Exception) {
-                Failure(e)
+                Failure(e.localizedMessage)
             }
         }
     }

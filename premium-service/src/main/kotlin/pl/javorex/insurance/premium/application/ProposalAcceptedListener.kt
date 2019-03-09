@@ -22,7 +22,7 @@ class ProposalAcceptedListener (
 
         val event: PremiumEvent = when (calculationTry) {
             is Success -> PremiumCalculatedEvent(calculationTry.success.value)
-            is Failure -> PremiumCalculationFailedEvent(calculationTry.error.localizedMessage)
+            is Failure -> PremiumCalculationFailedEvent(calculationTry.error)
         }
         premiumEventBus.emit(event, proposalAccepted.proposalId, proposalVersion)
     }
