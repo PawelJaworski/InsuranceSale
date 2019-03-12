@@ -13,6 +13,7 @@ import pl.javorex.util.kafka.streams.event.EventEnvelopeSerde
 import java.util.*
 import pl.javorex.util.event.EventEnvelope
 import pl.javorex.util.event.pack
+import java.time.Instant
 
 private val NO_PARTITION = null
 @Service
@@ -23,7 +24,7 @@ class ProposalEventBusKafkaAdapter(
     private val producer = ProducerFactory.createProducer(bootstrapServers)
 
     override fun emit(proposalAccepted: ProposalAcceptedEvent, version: Long) {
-        val timestamp = System.currentTimeMillis()
+        val timestamp = Instant.now().toEpochMilli()
         val key = proposalAccepted.proposalId
         val value = pack(proposalAccepted.proposalId, version, proposalAccepted)
                 .withTimestamp(timestamp)
