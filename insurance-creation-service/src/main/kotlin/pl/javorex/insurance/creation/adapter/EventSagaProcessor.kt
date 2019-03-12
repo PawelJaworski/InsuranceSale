@@ -11,18 +11,18 @@ import java.time.Duration
 class EventSagaProcessor(
         private val sagaSupplier: () -> EventSaga,
         private val heartBeatInterval: HeartBeatInterval,
-        private val storeName: String
+        private val storeType: StoreType,
+        private val successSinkType: SinkType,
+        private val errorSinkType: SinkType
 ) : AbstractProcessor<String, EventEnvelope>() {
     private lateinit var store: KeyValueStore<String, EventSaga>
-    private lateinit var streamTimeSchedule: Cancellable
-    private lateinit var systemTimeSchedule: Cancellable
 
     override fun init(context: ProcessorContext?) {
         super.init(context)
-        store = context().getStateStore(storeName) as KeyValueStore<String, EventSaga>
+        store = context().getStateStore(storeType.storeName) as KeyValueStore<String, EventSaga>
 
-        systemTimeSchedule = context()
-                .schedule(heartBeatInterval.milis, PunctuationType.WALL_CLOCK_TIME, this::doHeartBeat)
+        context()
+                .schedule(heartBeatInterval.duration, PunctuationType.WALL_CLOCK_TIME, this::doHeartBeat)
     }
 
     override fun process(key: String?, event: EventEnvelope?) {
@@ -66,16 +66,25 @@ class EventSagaProcessor(
         val eventEnvelope =  pack(aggregateId, saga.version.number, event)
 
 
-        context().forward(aggregateId, eventEnvelope, To.child("Insurance-Creation-Error-Sink"))
+        context().forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))
     }
 }
 
-class HeartBeatInterval(val milis: Long) {
+class HeartBeatInterval(val duration: Duration) {
     companion object {
         fun ofSeconds(sec: Long) : HeartBeatInterval {
-            val intervalInMilis = Duration.ofSeconds(sec).toMillis()
+            val duration = Duration.ofSeconds(sec)
 
-            return HeartBeatInterval(intervalInMilis)
+            return HeartBeatInterval(duration)
         }
     }
 }
+
+interface StoreType {
+    val storeName: String
+}
+
+interface SinkType {
+    val sinkName: String
+}
+

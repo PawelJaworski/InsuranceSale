@@ -17,6 +17,8 @@ import javax.annotation.PostConstruct
 import org.apache.kafka.streams.state.*
 import pl.javorex.insurance.creation.adapter.EventSagaProcessor
 import pl.javorex.insurance.creation.adapter.HeartBeatInterval
+import pl.javorex.insurance.creation.adapter.SinkType
+import pl.javorex.insurance.creation.adapter.StoreType
 import pl.javorex.util.event.EventEnvelope
 
 @Service
@@ -53,40 +55,42 @@ class InsuranceCreationSagaStream(
     }
 
     fun createTopology(props: Properties): Topology {
-        val streamBuilder = StreamsBuilder()
+        val storeSupplier: KeyValueBytesStoreSupplier = Stores
+                .inMemoryKeyValueStore(SagaStores.INSURANCE_CREATION.storeName)
+        val storeBuilder = Stores
+                .keyValueStoreBuilder(storeSupplier, Serdes.String(), JsonPojoSerde(EventSaga::class.java))
 
-        val proposalSourceName = "Proposal-Events-Source"
-        val premiumSourceName = "Premium-Events-Source"
-        val insuranceCreationSagaStoreName = "Insurance-Creation-Saga-Store"
-
-        val storeSupplier: KeyValueBytesStoreSupplier = Stores.inMemoryKeyValueStore(insuranceCreationSagaStoreName)
-        val storeBuilder = Stores.keyValueStoreBuilder(storeSupplier, Serdes.String(), JsonPojoSerde(EventSaga::class.java))
-                .withCachingDisabled()
-
-        return streamBuilder.build()
+        return StreamsBuilder().build()
                 .addSource(SourceType.PROPOSAL_EVENTS, proposalEventsTopic)
                 .addSource(SourceType.PREMIUM_EVENTS, premiumEventsTopic)
                 .addProcessor(
-                        ProcessorType.INSURANCE_CREATION_SAGA.processorName,
-                        ProcessorSupplier(this::insuranceCreationSagaProcessor),
+                        SagaProcessors.INSURANCE_CREATION_SAGA.processorName,
+                        ProcessorSupplier{
+                            EventSagaProcessor(
+                                insuranceCreationSagaSupplier(),
+                                HeartBeatInterval.ofSeconds(2),
+                                SagaStores.INSURANCE_CREATION,
+                                SagaSinks.INSURANCE_CREATION,
+                                SagaSinks.INSURANCE_CREATION_ERROR
+                            )
+                        },
                         SourceType.PROPOSAL_EVENTS.sourceName,
                         SourceType.PREMIUM_EVENTS.sourceName
                 )
-                .addStateStore(storeBuilder, ProcessorType.INSURANCE_CREATION_SAGA.processorName)
+                .addStateStore(storeBuilder, SagaProcessors.INSURANCE_CREATION_SAGA.processorName)
                 .addSink(
-                        SinkType.INSURANCE_CREATION,
+                        SagaSinks.INSURANCE_CREATION,
                         insuranceCreationEvents,
-                        ProcessorType.INSURANCE_CREATION_SAGA
+                        SagaProcessors.INSURANCE_CREATION_SAGA
                 )
                 .addSink(
-                        SinkType.INSURANCE_CREATION_ERROR,
+                        SagaSinks.INSURANCE_CREATION_ERROR,
                         insuranceCreationErrorTopic,
-                        ProcessorType.INSURANCE_CREATION_SAGA
+                        SagaProcessors.INSURANCE_CREATION_SAGA
                 );
     }
 
-    private fun insuranceCreationSagaProcessor(): EventSagaProcessor {
-        var eventSagaSupplier = {
+    private fun insuranceCreationSagaSupplier() = {
             EventSagaBuilder()
                     .withTimeout(Duration.ofSeconds(4))
                     .startsWith(ProposalAcceptedEvent::class.java)
@@ -94,19 +98,14 @@ class InsuranceCreationSagaStream(
                     .expectErrors(PremiumCalculationFailedEvent::class.java)
                     .build()
         }
-        return EventSagaProcessor(
-                eventSagaSupplier,
-                HeartBeatInterval.ofSeconds(2),
-                StoreType.INSURANCE_CREATION.storeName
-        )
-    }
+
 }
 
 private fun Topology.addSource(sourceType: SourceType, topic: String): Topology {
     return this.addSource(sourceType.sourceName, sourceType.keyDeserializer, sourceType.valueDeserializer, topic)
 }
 
-private fun Topology.addSink(sinkType: SinkType, topic: String, parent: ProcessorType): Topology {
+private fun Topology.addSink(sinkType: SagaSinks, topic: String, parent: SagaProcessors): Topology {
     return this.addSink(
             sinkType.sinkName,
             topic,
@@ -124,17 +123,17 @@ private enum class SourceType(
     PROPOSAL_EVENTS("Proposal-Events-Source"),
     PREMIUM_EVENTS("Premium-Events-Source")
 }
-private enum class StoreType(val storeName: String) {
+private enum class SagaStores(override val storeName: String) : StoreType {
     INSURANCE_CREATION("Insurance-Creation-Saga-Store")
 }
-private enum class ProcessorType(val processorName: String) {
+private enum class SagaProcessors(val processorName: String) {
     INSURANCE_CREATION_SAGA("Insurance-Creation-Saga-Processor")
 }
-private enum class SinkType(
-        val sinkName: String,
+private enum class SagaSinks(
+        override val sinkName: String,
         val keySerializer: StringSerializer = StringSerializer(),
         val valueSerializer: Serializer<EventEnvelope> = EventEnvelopeSerde().serializer()
-) {
+)  : SinkType {
     INSURANCE_CREATION("Insurance-Creation-Sink"),
     INSURANCE_CREATION_ERROR("Insurance-Creation-Error-Sink")
 }
