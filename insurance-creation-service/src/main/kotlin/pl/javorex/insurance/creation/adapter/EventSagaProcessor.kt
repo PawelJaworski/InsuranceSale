@@ -30,16 +30,16 @@ class EventSagaProcessor(
             return
         }
 
-        val newSaga = sagaSupplier()
-        val saga = store.putIfAbsent(key, newSaga)
-        if (saga == null) {
-            newSaga.mergeEvent(event)
-            store.put(key, newSaga)
 
-        } else {
-            saga.mergeEvent(event)
-            store.put(key, saga)
-        }
+       val newSaga = store.get(key) ?: sagaSupplier()
+       newSaga.mergeEvent(event)
+
+       if (newSaga.hasErrors()) {
+           fireErrors(key!!, newSaga)
+           store.delete(key)
+       } else {
+           store.put(key, newSaga)
+       }
     }
 
     private fun doHeartBeat(timestamp: Long) {
@@ -48,24 +48,37 @@ class EventSagaProcessor(
             val aggregateId = it.key
             val saga = it.value
 
+            if (saga.hasErrors() || saga.isExpired(timestamp)) {
+                toRemove += aggregateId
+            }
+
             if (saga.isTimeoutOccurred(timestamp)) {
                 fireTimeoutEvent(aggregateId, saga)
                 toRemove += aggregateId
             }
-            if (saga.isExpired(timestamp)) {
-                toRemove += aggregateId
-            }
+
         }
         toRemove.forEach {
             store.delete(it)
         }
     }
 
+    private fun fireErrors(aggregateId: String, saga: EventSaga) {
+        val aggregateVersion = saga.events.version
+        saga.takeErrors().forEach{
+            val event = InsuranceCreationSagaCorrupted(aggregateVersion, it.message)
+
+            val eventEnvelope =  pack(aggregateId, it.version, event)
+            context().forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))
+        }
+    }
+
     private fun fireTimeoutEvent(aggregateId: String, saga: EventSaga) {
-        val event = InsuranceCreationSagaCorrupted(saga.version.number, "Request timeout. Missing ${saga.missingEvents().contentToString()}")
-        val eventEnvelope =  pack(aggregateId, saga.version.number, event)
+        val aggregateVersion = saga.events.version
+        val errorMsg = "Request timeout. Missing ${saga.missingEvents().contentToString()}"
+        val event = InsuranceCreationSagaCorrupted(aggregateVersion, errorMsg)
 
-
+        val eventEnvelope =  pack(aggregateId, aggregateVersion, event)
         context().forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))
     }
 }

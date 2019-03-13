@@ -1,75 +1,33 @@
 package pl.javorex.insurance.creation.application
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonProperty
 import pl.javorex.util.event.EventEnvelope
-import java.time.Duration
-import java.time.Instant
 
-private val LACK_OF_EVENT = null
-
-class EventSagaBuilder(
-        private var events: SagaEvents = SagaEvents(),
-        private var errors: HashMap<Long, String> = hashMapOf()
-) {
-    private var timeout: Long = 0
-
-    fun withTimeout(timeout: Duration): EventSagaBuilder {
-        this.timeout = timeout.toMillis()
-
-        return this
-    }
-
-    fun startsWith(clazz: Class<*>): EventSagaBuilder {
-        events.starting[clazz.simpleName] = LACK_OF_EVENT
-
-        return this
-    }
-    fun requires(clazz: Class<*>): EventSagaBuilder {
-        events.required[clazz.simpleName] = LACK_OF_EVENT
-
-        return this
-    }
-    fun expectErrors(clazz: Class<*>): EventSagaBuilder {
-        events.expectedErrors.add(clazz.simpleName)
-
-        return this
-    }
-
-    fun build() : EventSaga {
-        return EventSaga(timeout, events, errors)
-    }
-}
+val LACK_OF_EVENT = null
 
 data class EventSaga(
         var timeout: Long = 0,
         var events: SagaEvents = SagaEvents(),
-        var errors: HashMap<Long, String> = hashMapOf(),
+        var error: List<EventSagaError> = arrayListOf(),
         var creationTimestamp: Long = System.currentTimeMillis(),
-        var version: SagaVersion = SagaVersion()
+        var finished: Boolean = false
 ) {
 
     fun mergeEvent(event: EventEnvelope): EventSaga {
         val eventType = event.eventType
-        check(events.contains(eventType)) {
-            throw IllegalStateException("Unrecognized event of type $eventType")
-        }
-
-        val eventVersion = SagaVersion(event.aggregateVersion)
-        if (version.isMoreCurrentThan(eventVersion)) {
-            errors[eventVersion.number] = "Request outdated"
+        if (!events.contains(eventType)) {
             return this
         }
 
-        if (version.isLessCurrentThan(eventVersion)) {
-            errors[version.number] = "Request outdated"
-            version = eventVersion
+        if (events.isVersionDiffers(event.aggregateVersion)) {
+            putError("Other request in progress", event.aggregateVersion)
+
+            return this
         }
 
         if ((events.required.contains(eventType) && events.required[eventType] != LACK_OF_EVENT)
                 || events.starting.contains(eventType) && events.starting[eventType] != LACK_OF_EVENT
         ) {
-            errors[version.number] = "Double event $eventType"
+            putError("Double event $eventType")
 
             return this
         }
@@ -79,12 +37,15 @@ data class EventSaga(
         }
 
         events.collectOrHandleError(event) {
-            errors[version.number] = event.payload["error"].asText()
+            putError(event.payload["error"].asText())
         }
 
         return this
     }
 
+    fun finish() {
+        finished = true
+    }
     fun missingEvents() = events.required
             .filter { e -> e.value == LACK_OF_EVENT }
             .map { it.key }
@@ -112,38 +73,31 @@ data class EventSaga(
     fun isComplete() = events.starting.none { it.value == LACK_OF_EVENT}
             && events.required.none { it.value == LACK_OF_EVENT}
 
-    fun hasErrors() = errors.isNotEmpty()
+    fun hasErrors() = error.isNotEmpty()
 
-    fun takeErrors(): List<String> {
-        val takenErrors = errors.keys
-                .map { errors[it]!! }
+    fun putError(message: String, version: Long = this.events.version) {
+       error += EventSagaError(message, version)
+    }
 
-        errors = hashMapOf()
+    fun takeErrors(): List<EventSagaError> {
+        val takenErrors = error
+
+        error = arrayListOf()
 
         return takenErrors
     }
 }
 
-private const val SMALLEST_VERSION_NO = 0L
-data class SagaVersion(
-        val number: Long = SMALLEST_VERSION_NO
-) {
-    init{
-        check(number >= 0) {"Saga-version-number cannot be less than 0"}
-    }
-    fun isMoreCurrentThan(other: SagaVersion) = number > other.number
-    fun isLessCurrentThan(other: SagaVersion) = number != SMALLEST_VERSION_NO && number < other.number
-}
+private const val NO_VERSION = Long.MIN_VALUE
 
 private const val EVENT_HAVENT_ARRIVED_YET = Long.MAX_VALUE
 data class SagaEvents(
         var starting: HashMap<String, EventEnvelope?> = hashMapOf(),
         var required: HashMap<String, EventEnvelope?> = hashMapOf(),
         var expectedErrors: HashSet<String> = hashSetOf(),
-        var startedTimestamp: Long = EVENT_HAVENT_ARRIVED_YET
+        var startedTimestamp: Long = EVENT_HAVENT_ARRIVED_YET,
+        var version: Long = NO_VERSION
 ) {
-    fun isStarted() = startedTimestamp != EVENT_HAVENT_ARRIVED_YET
-
     fun contains(eventType: String) = starting.contains(eventType)
             || required.contains(eventType)
             || expectedErrors.contains(eventType)
@@ -153,12 +107,21 @@ data class SagaEvents(
         when {
             expectedErrors.contains(eventType) -> onErrorConsumer.invoke(event)
             starting.contains(eventType) -> {
+                if (isStarted()) {
+                    throw IllegalStateException("Saga already started for ${event.aggregateId}")
+                }
                 starting[eventType] = event
                 startedTimestamp = event.timestamp
+                version = event.aggregateVersion
             }
             required.contains(eventType) -> required[eventType] = event
         }
     }
+
+    fun isVersionDiffers(otherVersion: Long) = version != NO_VERSION && version != otherVersion
+
+    fun isStarted() = startedTimestamp != EVENT_HAVENT_ARRIVED_YET
+
     inline fun <reified T>get(event: Class<T>): T {
             val eventType = event.simpleName
             return when {
@@ -170,3 +133,5 @@ data class SagaEvents(
             }
     }
 }
+
+data class EventSagaError(val message: String, val version: Long)

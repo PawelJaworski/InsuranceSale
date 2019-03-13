@@ -92,7 +92,7 @@ class InsuranceCreationSagaStream(
 
     private fun insuranceCreationSagaSupplier() = {
             EventSagaBuilder()
-                    .withTimeout(Duration.ofSeconds(4))
+                    .withTimeout(Duration.ofSeconds(10))
                     .startsWith(ProposalAcceptedEvent::class.java)
                     .requires(PremiumCalculatedEvent::class.java)
                     .expectErrors(PremiumCalculationFailedEvent::class.java)
