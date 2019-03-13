@@ -20,6 +20,8 @@ import pl.javorex.insurance.creation.adapter.HeartBeatInterval
 import pl.javorex.insurance.creation.adapter.SinkType
 import pl.javorex.insurance.creation.adapter.StoreType
 import pl.javorex.util.event.EventEnvelope
+import pl.javorex.util.event.EventSaga
+import pl.javorex.util.event.EventSagaBuilder
 
 @Service
 class InsuranceCreationSagaStream(
@@ -92,7 +94,7 @@ class InsuranceCreationSagaStream(
 
     private fun insuranceCreationSagaSupplier() = {
             EventSagaBuilder()
-                    .withTimeout(Duration.ofSeconds(10))
+                    .withTimeout(Duration.ofSeconds(5))
                     .startsWith(ProposalAcceptedEvent::class.java)
                     .requires(PremiumCalculatedEvent::class.java)
                     .expectErrors(PremiumCalculationFailedEvent::class.java)

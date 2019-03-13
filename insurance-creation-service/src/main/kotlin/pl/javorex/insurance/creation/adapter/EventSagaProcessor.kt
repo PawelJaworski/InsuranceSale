@@ -2,7 +2,7 @@ package pl.javorex.insurance.creation.adapter
 
 import org.apache.kafka.streams.processor.*
 import org.apache.kafka.streams.state.KeyValueStore
-import pl.javorex.insurance.creation.application.EventSaga
+import pl.javorex.util.event.EventSaga
 import pl.javorex.insurance.creation.application.InsuranceCreationSagaCorrupted
 import pl.javorex.util.event.EventEnvelope
 import pl.javorex.util.event.pack
@@ -29,7 +29,6 @@ class EventSagaProcessor(
         if (event == null) {
             return
         }
-
 
        val newSaga = store.get(key) ?: sagaSupplier()
        newSaga.mergeEvent(event)

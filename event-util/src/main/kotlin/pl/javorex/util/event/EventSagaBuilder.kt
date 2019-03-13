@@ -1,4 +1,4 @@
-package pl.javorex.insurance.creation.application
+package pl.javorex.util.event
 
 import java.time.Duration
 

@@ -1,6 +1,4 @@
-package pl.javorex.insurance.creation.application
-
-import pl.javorex.util.event.EventEnvelope
+package pl.javorex.util.event
 
 val LACK_OF_EVENT = null
 
@@ -70,8 +68,8 @@ data class EventSaga(
         return startedTimestamp > from && startedTimestamp < to
     }
 
-    fun isComplete() = events.starting.none { it.value == LACK_OF_EVENT}
-            && events.required.none { it.value == LACK_OF_EVENT}
+    fun isComplete() = events.starting.none { it.value == LACK_OF_EVENT }
+            && events.required.none { it.value == LACK_OF_EVENT }
 
     fun hasErrors() = error.isNotEmpty()
 
