@@ -5,6 +5,7 @@ import org.apache.kafka.streams.state.KeyValueStore
 import pl.javorex.util.event.EventSagaTemplate
 import pl.javorex.insurance.creation.application.InsuranceCreationSagaCorrupted
 import pl.javorex.util.event.EventEnvelope
+import pl.javorex.util.event.SagaEventFactory
 import pl.javorex.util.event.pack
 import java.time.Duration
 import java.time.Instant
@@ -13,6 +14,7 @@ class EventSagaProcessor(
         private val sagaSupplier: () -> EventSagaTemplate,
         private val heartBeatInterval: HeartBeatInterval,
         private val storeType: StoreType,
+        private val eventFactory: SagaEventFactory,
         private val successSinkType: SinkType,
         private val errorSinkType: SinkType
 ) : AbstractProcessor<String, EventEnvelope>() {
@@ -53,8 +55,7 @@ class EventSagaProcessor(
             }
 
             if (saga.isTimeoutOccurred(timestamp)) {
-                //println("[TIME] ${Instant.ofEpochMilli(saga.events.startedTimestamp)} ${Instant.ofEpochMilli(timestamp)}")
-                fireTimeoutEvent(aggregateId, saga)
+               fireTimeoutEvent(aggregateId, saga)
                 toRemove += aggregateId
             }
 
@@ -67,7 +68,7 @@ class EventSagaProcessor(
     private fun fireErrors(aggregateId: String, saga: EventSagaTemplate) {
         val aggregateVersion = saga.events.version()
         saga.takeErrors().forEach{
-            val event = InsuranceCreationSagaCorrupted(aggregateVersion, it.message)
+            val event = eventFactory.newErrorEvent(aggregateId, aggregateVersion, it.message)
 
             val eventEnvelope =  pack(aggregateId, it.version, event)
             context().forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))
@@ -76,8 +77,7 @@ class EventSagaProcessor(
 
     private fun fireTimeoutEvent(aggregateId: String, saga: EventSagaTemplate) {
         val aggregateVersion = saga.events.version()
-        val errorMsg = "Request timeout. Missing ${saga.events.missing().contentToString()}"
-        val event = InsuranceCreationSagaCorrupted(aggregateVersion, errorMsg)
+        val event = eventFactory.newTimeoutEvent(aggregateId, aggregateVersion, saga.events.missing())
 
         val eventEnvelope =  pack(aggregateId, aggregateVersion, event)
         context().forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))

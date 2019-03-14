@@ -93,7 +93,6 @@ data class SagaEvents(
             required
                     .filter { e -> e.value == LACK_OF_EVENT }
                     .map { it.key }
-                    .toTypedArray()
 
     fun version() = version
 

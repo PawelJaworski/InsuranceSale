@@ -22,6 +22,7 @@ import pl.javorex.insurance.creation.adapter.StoreType
 import pl.javorex.util.event.EventEnvelope
 import pl.javorex.util.event.EventSagaTemplate
 import pl.javorex.util.event.EventSagaBuilder
+import pl.javorex.util.event.SagaEventFactory
 
 @Service
 class InsuranceCreationSagaStream(
@@ -72,6 +73,7 @@ class InsuranceCreationSagaStream(
                                 insuranceCreationSagaSupplier(),
                                 HeartBeatInterval.ofSeconds(2),
                                 SagaStores.INSURANCE_CREATION,
+                                InsuranceCreationSagaFactory,
                                 SagaSinks.INSURANCE_CREATION,
                                 SagaSinks.INSURANCE_CREATION_ERROR
                             )
@@ -138,4 +140,13 @@ private enum class SagaSinks(
 )  : SinkType {
     INSURANCE_CREATION("Insurance-Creation-Sink"),
     INSURANCE_CREATION_ERROR("Insurance-Creation-Error-Sink")
+}
+
+private object InsuranceCreationSagaFactory : SagaEventFactory {
+    override fun newErrorEvent(aggregateId: String, aggregateVersion: Long, error: String) =
+            InsuranceCreationSagaCorrupted(aggregateVersion, error)
+
+    override fun newTimeoutEvent(aggregateId: String, aggregateVersion: Long, missing: List<String>) =
+            InsuranceCreationSagaCorrupted(aggregateVersion, "Request Timeout. Missing ${missing.joinToString(",")}")
+
 }
