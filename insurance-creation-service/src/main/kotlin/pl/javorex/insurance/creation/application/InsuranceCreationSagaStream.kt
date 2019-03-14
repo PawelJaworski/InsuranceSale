@@ -20,7 +20,7 @@ import pl.javorex.insurance.creation.adapter.HeartBeatInterval
 import pl.javorex.insurance.creation.adapter.SinkType
 import pl.javorex.insurance.creation.adapter.StoreType
 import pl.javorex.util.event.EventEnvelope
-import pl.javorex.util.event.EventSaga
+import pl.javorex.util.event.EventSagaTemplate
 import pl.javorex.util.event.EventSagaBuilder
 
 @Service
@@ -60,7 +60,7 @@ class InsuranceCreationSagaStream(
         val storeSupplier: KeyValueBytesStoreSupplier = Stores
                 .inMemoryKeyValueStore(SagaStores.INSURANCE_CREATION.storeName)
         val storeBuilder = Stores
-                .keyValueStoreBuilder(storeSupplier, Serdes.String(), JsonPojoSerde(EventSaga::class.java))
+                .keyValueStoreBuilder(storeSupplier, Serdes.String(), JsonPojoSerde(EventSagaTemplate::class.java))
 
         return StreamsBuilder().build()
                 .addSource(SourceType.PROPOSAL_EVENTS, proposalEventsTopic)

@@ -2,24 +2,24 @@ package pl.javorex.insurance.creation.adapter
 
 import org.apache.kafka.streams.processor.*
 import org.apache.kafka.streams.state.KeyValueStore
-import pl.javorex.util.event.EventSaga
+import pl.javorex.util.event.EventSagaTemplate
 import pl.javorex.insurance.creation.application.InsuranceCreationSagaCorrupted
 import pl.javorex.util.event.EventEnvelope
 import pl.javorex.util.event.pack
 import java.time.Duration
 
 class EventSagaProcessor(
-        private val sagaSupplier: () -> EventSaga,
+        private val sagaSupplier: () -> EventSagaTemplate,
         private val heartBeatInterval: HeartBeatInterval,
         private val storeType: StoreType,
         private val successSinkType: SinkType,
         private val errorSinkType: SinkType
 ) : AbstractProcessor<String, EventEnvelope>() {
-    private lateinit var store: KeyValueStore<String, EventSaga>
+    private lateinit var store: KeyValueStore<String, EventSagaTemplate>
 
     override fun init(context: ProcessorContext?) {
         super.init(context)
-        store = context().getStateStore(storeType.storeName) as KeyValueStore<String, EventSaga>
+        store = context().getStateStore(storeType.storeName) as KeyValueStore<String, EventSagaTemplate>
 
         context()
                 .schedule(heartBeatInterval.duration, PunctuationType.WALL_CLOCK_TIME, this::doHeartBeat)
@@ -62,7 +62,7 @@ class EventSagaProcessor(
         }
     }
 
-    private fun fireErrors(aggregateId: String, saga: EventSaga) {
+    private fun fireErrors(aggregateId: String, saga: EventSagaTemplate) {
         val aggregateVersion = saga.events.version
         saga.takeErrors().forEach{
             val event = InsuranceCreationSagaCorrupted(aggregateVersion, it.message)
@@ -72,7 +72,7 @@ class EventSagaProcessor(
         }
     }
 
-    private fun fireTimeoutEvent(aggregateId: String, saga: EventSaga) {
+    private fun fireTimeoutEvent(aggregateId: String, saga: EventSagaTemplate) {
         val aggregateVersion = saga.events.version
         val errorMsg = "Request timeout. Missing ${saga.missingEvents().contentToString()}"
         val event = InsuranceCreationSagaCorrupted(aggregateVersion, errorMsg)

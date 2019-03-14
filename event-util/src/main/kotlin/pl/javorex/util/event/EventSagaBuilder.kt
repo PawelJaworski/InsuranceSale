@@ -29,7 +29,7 @@ class EventSagaBuilder(
         return this
     }
 
-    fun build() : EventSaga {
-        return EventSaga(timeout, events)
+    fun build() : EventSagaTemplate {
+        return EventSagaTemplate(timeout, events)
     }
 }

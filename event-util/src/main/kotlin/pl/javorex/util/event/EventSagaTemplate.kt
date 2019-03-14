@@ -2,7 +2,7 @@ package pl.javorex.util.event
 
 val LACK_OF_EVENT = null
 
-data class EventSaga(
+data class EventSagaTemplate(
         var timeout: Long = 0,
         var events: SagaEvents = SagaEvents(),
         var error: List<EventSagaError> = arrayListOf(),
@@ -10,7 +10,7 @@ data class EventSaga(
         var finished: Boolean = false
 ) {
 
-    fun mergeEvent(event: EventEnvelope): EventSaga {
+    fun mergeEvent(event: EventEnvelope): EventSagaTemplate {
         val eventType = event.eventType
         if (!events.contains(eventType)) {
             return this
