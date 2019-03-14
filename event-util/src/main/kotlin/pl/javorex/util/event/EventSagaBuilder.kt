@@ -24,7 +24,7 @@ class EventSagaBuilder(
         return this
     }
     fun expectErrors(clazz: Class<*>): EventSagaBuilder {
-        events.expectedErrors.add(clazz.simpleName)
+        events.expectError(clazz.simpleName)
 
         return this
     }

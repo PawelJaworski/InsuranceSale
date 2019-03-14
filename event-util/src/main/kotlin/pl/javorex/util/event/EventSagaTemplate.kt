@@ -3,52 +3,29 @@ package pl.javorex.util.event
 val LACK_OF_EVENT = null
 
 data class EventSagaTemplate(
-        var timeout: Long = 0,
-        var events: SagaEvents = SagaEvents(),
-        var error: List<EventSagaError> = arrayListOf(),
-        var creationTimestamp: Long = System.currentTimeMillis(),
-        var finished: Boolean = false
+        @PublishedApi
+        internal val timeout: Long = 0,
+        val events: SagaEvents = SagaEvents(),
+        internal val errors: ArrayList<EventSagaError> = arrayListOf(),
+        internal val creationTimestamp: Long = System.currentTimeMillis()
 ) {
 
-    fun mergeEvent(event: EventEnvelope): EventSagaTemplate {
+    fun mergeEvent(event: EventEnvelope) {
         val eventType = event.eventType
-        if (!events.contains(eventType)) {
-            return this
+        val eventVersion = event.aggregateVersion
+        when {
+            !events.contains(eventType) ->
+                return
+            events.isVersionDiffers(eventVersion) ->
+                putError("Other request pending", eventVersion)
+            events.alreadyContains(eventType) ->
+                putError("Double event of type $eventType")
+            else ->
+                events.collectOrHandleError(event) {
+                    putError(event.payload["error"].asText())
+                }
         }
-
-        if (events.isVersionDiffers(event.aggregateVersion)) {
-            putError("Other request in progress", event.aggregateVersion)
-
-            return this
-        }
-
-        if ((events.required.contains(eventType) && events.required[eventType] != LACK_OF_EVENT)
-                || events.starting.contains(eventType) && events.starting[eventType] != LACK_OF_EVENT
-        ) {
-            putError("Double event $eventType")
-
-            return this
-        }
-
-        if (isComplete()) {
-            return this
-        }
-
-        events.collectOrHandleError(event) {
-            putError(event.payload["error"].asText())
-        }
-
-        return this
     }
-
-    fun finish() {
-        finished = true
-    }
-    fun missingEvents() = events.required
-            .filter { e -> e.value == LACK_OF_EVENT }
-            .map { it.key }
-            .toTypedArray()
-
 
     fun isTimeoutOccurred(timestamp: Long) =
             events.isStarted() && events.startedTimestamp + timeout < timestamp
@@ -56,50 +33,35 @@ data class EventSagaTemplate(
     fun isExpired(timestamp: Long) =
             creationTimestamp + 2 * timeout < timestamp
 
-    fun startedBefore(timestamp: Long): Boolean {
-        val startedTimestamp = events.startedTimestamp
+    fun isComplete() = events.containsAllRequired()
 
-        return startedTimestamp < timestamp
-    }
-
-    fun startedBetween(from: Long, to: Long): Boolean {
-        val startedTimestamp = events.startedTimestamp
-
-        return startedTimestamp > from && startedTimestamp < to
-    }
-
-    fun isComplete() = events.starting.none { it.value == LACK_OF_EVENT }
-            && events.required.none { it.value == LACK_OF_EVENT }
-
-    fun hasErrors() = error.isNotEmpty()
-
-    fun putError(message: String, version: Long = this.events.version) {
-       error += EventSagaError(message, version)
-    }
+    fun hasErrors() = errors.isNotEmpty()
 
     fun takeErrors(): List<EventSagaError> {
-        val takenErrors = error
+        val takenErrors = errors.toMutableList()
 
-        error = arrayListOf()
-
+        errors.clear()
         return takenErrors
     }
+
+    private fun putError(message: String, version: Long = this.events.version) {
+        errors += EventSagaError(message, version)
+    }
+
 }
 
 private const val NO_VERSION = Long.MIN_VALUE
 
 private const val EVENT_HAVENT_ARRIVED_YET = Long.MAX_VALUE
 data class SagaEvents(
-        var starting: HashMap<String, EventEnvelope?> = hashMapOf(),
-        var required: HashMap<String, EventEnvelope?> = hashMapOf(),
-        var expectedErrors: HashSet<String> = hashSetOf(),
-        var startedTimestamp: Long = EVENT_HAVENT_ARRIVED_YET,
-        var version: Long = NO_VERSION
+        @PublishedApi
+        internal val starting: HashMap<String, EventEnvelope?> = hashMapOf(),
+        @PublishedApi
+        internal val required: HashMap<String, EventEnvelope?> = hashMapOf(),
+        internal val expectedErrors: HashSet<String> = hashSetOf(),
+        internal var startedTimestamp: Long = EVENT_HAVENT_ARRIVED_YET,
+        internal var version: Long = NO_VERSION
 ) {
-    fun contains(eventType: String) = starting.contains(eventType)
-            || required.contains(eventType)
-            || expectedErrors.contains(eventType)
-
     fun collectOrHandleError(event: EventEnvelope, onErrorConsumer: (EventEnvelope) -> Unit) {
         val eventType = event.eventType
         when {
@@ -116,10 +78,6 @@ data class SagaEvents(
         }
     }
 
-    fun isVersionDiffers(otherVersion: Long) = version != NO_VERSION && version != otherVersion
-
-    fun isStarted() = startedTimestamp != EVENT_HAVENT_ARRIVED_YET
-
     inline fun <reified T>get(event: Class<T>): T {
             val eventType = event.simpleName
             return when {
@@ -130,6 +88,32 @@ data class SagaEvents(
                 else -> throw IllegalStateException("Cannot get event of type $eventType")
             }
     }
+
+    fun missing() =
+            required
+                    .filter { e -> e.value == LACK_OF_EVENT }
+                    .map { it.key }
+                    .toTypedArray()
+
+    fun version() = version
+
+    internal fun isStarted() = startedTimestamp != EVENT_HAVENT_ARRIVED_YET
+
+    internal fun isVersionDiffers(otherVersion: Long) = version != NO_VERSION && version != otherVersion
+
+    internal fun expectError(eventType: String) {
+        expectedErrors += eventType
+    }
+
+    internal fun contains(eventType: String) = starting.contains(eventType)
+            || required.contains(eventType)
+            || expectedErrors.contains(eventType)
+
+    internal fun alreadyContains(eventType: String) =
+            starting[eventType] != LACK_OF_EVENT || required[eventType] != LACK_OF_EVENT
+
+    internal fun containsAllRequired() =
+            starting.none{ it.value == LACK_OF_EVENT} && required.none{ it.value == LACK_OF_EVENT }
 }
 
 data class EventSagaError(val message: String, val version: Long)

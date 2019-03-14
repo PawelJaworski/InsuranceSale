@@ -7,6 +7,7 @@ import pl.javorex.insurance.creation.application.InsuranceCreationSagaCorrupted
 import pl.javorex.util.event.EventEnvelope
 import pl.javorex.util.event.pack
 import java.time.Duration
+import java.time.Instant
 
 class EventSagaProcessor(
         private val sagaSupplier: () -> EventSagaTemplate,
@@ -47,11 +48,12 @@ class EventSagaProcessor(
             val aggregateId = it.key
             val saga = it.value
 
-            if (saga.hasErrors() || saga.isExpired(timestamp)) {
+            if (saga.isExpired(timestamp)) {
                 toRemove += aggregateId
             }
 
             if (saga.isTimeoutOccurred(timestamp)) {
+                //println("[TIME] ${Instant.ofEpochMilli(saga.events.startedTimestamp)} ${Instant.ofEpochMilli(timestamp)}")
                 fireTimeoutEvent(aggregateId, saga)
                 toRemove += aggregateId
             }
@@ -63,7 +65,7 @@ class EventSagaProcessor(
     }
 
     private fun fireErrors(aggregateId: String, saga: EventSagaTemplate) {
-        val aggregateVersion = saga.events.version
+        val aggregateVersion = saga.events.version()
         saga.takeErrors().forEach{
             val event = InsuranceCreationSagaCorrupted(aggregateVersion, it.message)
 
@@ -73,8 +75,8 @@ class EventSagaProcessor(
     }
 
     private fun fireTimeoutEvent(aggregateId: String, saga: EventSagaTemplate) {
-        val aggregateVersion = saga.events.version
-        val errorMsg = "Request timeout. Missing ${saga.missingEvents().contentToString()}"
+        val aggregateVersion = saga.events.version()
+        val errorMsg = "Request timeout. Missing ${saga.events.missing().contentToString()}"
         val event = InsuranceCreationSagaCorrupted(aggregateVersion, errorMsg)
 
         val eventEnvelope =  pack(aggregateId, aggregateVersion, event)
