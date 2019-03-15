@@ -1,7 +1,5 @@
 package pl.javorex.event.util
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -9,14 +7,12 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
 
-data class EventEnvelope
-@JsonCreator
-constructor(
-        @JsonProperty("aggregateId") val aggregateId: String,
-        @JsonProperty("timestamp") val timestamp: Long,
-        @JsonProperty("aggregateVersion") val aggregateVersion: Long,
-        @JsonProperty("eventType") val eventType: String,
-        @JsonProperty("payload") val payload: JsonNode
+data class EventEnvelope(
+        val aggregateId: String,
+        val timestamp: Long,
+        val aggregateVersion: Long,
+        val eventType: String,
+        val payload: JsonNode
 ) {
     fun isTypeOf(clazz: Class<*>) = clazz.simpleName == eventType
     fun <T>unpack(clazz: Class<T>): T = newObjectMapper().treeToValue(payload, clazz)
