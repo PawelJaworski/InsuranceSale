@@ -3,18 +3,16 @@ package pl.javorex.insurance.creation.adapter
 import org.apache.kafka.streams.processor.*
 import org.apache.kafka.streams.state.KeyValueStore
 import pl.javorex.event.util.EventSagaTemplate
-import pl.javorex.insurance.creation.application.InsuranceCreationSagaCorrupted
 import pl.javorex.event.util.EventEnvelope
-import pl.javorex.event.util.SagaEventFactory
+import pl.javorex.event.util.SagaEventListener
 import pl.javorex.event.util.pack
 import java.time.Duration
-import java.time.Instant
 
 class EventSagaProcessor(
         private val sagaSupplier: () -> EventSagaTemplate,
         private val heartBeatInterval: HeartBeatInterval,
         private val storeType: StoreType,
-        private val eventFactory: SagaEventFactory,
+        private val eventListener: SagaEventListener,
         private val successSinkType: SinkType,
         private val errorSinkType: SinkType
 ) : AbstractProcessor<String, EventEnvelope>() {
@@ -68,7 +66,7 @@ class EventSagaProcessor(
     private fun fireErrors(aggregateId: String, saga: EventSagaTemplate) {
         val aggregateVersion = saga.events.version()
         saga.takeErrors().forEach{
-            val event = eventFactory.newErrorEvent(aggregateId, aggregateVersion, it.message)
+            val event = eventListener.newErrorEvent(aggregateId, aggregateVersion, it.message)
 
             val eventEnvelope = pack(aggregateId, it.version, event)
             context().forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))
@@ -77,7 +75,7 @@ class EventSagaProcessor(
 
     private fun fireTimeoutEvent(aggregateId: String, saga: EventSagaTemplate) {
         val aggregateVersion = saga.events.version()
-        val event = eventFactory.newTimeoutEvent(aggregateId, aggregateVersion, saga.events.missing())
+        val event = eventListener.newTimeoutEvent(aggregateId, aggregateVersion, saga.events.missing())
 
         val eventEnvelope = pack(aggregateId, aggregateVersion, event)
         context().forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))

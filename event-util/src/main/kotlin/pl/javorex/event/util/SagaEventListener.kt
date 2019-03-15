@@ -1,6 +1,6 @@
 package pl.javorex.event.util
 
-interface SagaEventFactory {
+interface SagaEventListener {
     fun newErrorEvent(
             aggregateId: String,
             aggregateVersion: Long,
