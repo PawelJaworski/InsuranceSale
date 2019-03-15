@@ -1,4 +1,4 @@
-package pl.javorex.util.event
+package pl.javorex.event.util
 
 val LACK_OF_EVENT = null
 
@@ -112,7 +112,7 @@ data class SagaEvents(
             starting[eventType] != LACK_OF_EVENT || required[eventType] != LACK_OF_EVENT
 
     internal fun containsAllRequired() =
-            starting.none{ it.value == LACK_OF_EVENT} && required.none{ it.value == LACK_OF_EVENT }
+            starting.none{ it.value == LACK_OF_EVENT } && required.none{ it.value == LACK_OF_EVENT }
 }
 
 data class EventSagaError(val message: String, val version: Long)

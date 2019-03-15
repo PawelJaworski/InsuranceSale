@@ -1,4 +1,4 @@
-package pl.javorex.util.event
+package pl.javorex.event.util
 
 import java.time.Duration
 

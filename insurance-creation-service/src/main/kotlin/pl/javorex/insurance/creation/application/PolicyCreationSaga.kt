@@ -3,7 +3,7 @@ package pl.javorex.insurance.creation.application
 import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
 import pl.javorex.insurance.premium.domain.event.PremiumCalculationFailedEvent
 import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
-import pl.javorex.util.event.EventEnvelope
+import pl.javorex.event.util.EventEnvelope
 
 data class InsuranceCreationSagaCompleted(
         val version: Long,

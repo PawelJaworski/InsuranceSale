@@ -19,10 +19,10 @@ import pl.javorex.insurance.creation.adapter.EventSagaProcessor
 import pl.javorex.insurance.creation.adapter.HeartBeatInterval
 import pl.javorex.insurance.creation.adapter.SinkType
 import pl.javorex.insurance.creation.adapter.StoreType
-import pl.javorex.util.event.EventEnvelope
-import pl.javorex.util.event.EventSagaTemplate
-import pl.javorex.util.event.EventSagaBuilder
-import pl.javorex.util.event.SagaEventFactory
+import pl.javorex.event.util.EventEnvelope
+import pl.javorex.event.util.EventSagaTemplate
+import pl.javorex.event.util.EventSagaBuilder
+import pl.javorex.event.util.SagaEventFactory
 
 @Service
 class InsuranceCreationSagaStream(

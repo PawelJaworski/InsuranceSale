@@ -2,11 +2,11 @@ package pl.javorex.insurance.creation.adapter
 
 import org.apache.kafka.streams.processor.*
 import org.apache.kafka.streams.state.KeyValueStore
-import pl.javorex.util.event.EventSagaTemplate
+import pl.javorex.event.util.EventSagaTemplate
 import pl.javorex.insurance.creation.application.InsuranceCreationSagaCorrupted
-import pl.javorex.util.event.EventEnvelope
-import pl.javorex.util.event.SagaEventFactory
-import pl.javorex.util.event.pack
+import pl.javorex.event.util.EventEnvelope
+import pl.javorex.event.util.SagaEventFactory
+import pl.javorex.event.util.pack
 import java.time.Duration
 import java.time.Instant
 
@@ -70,7 +70,7 @@ class EventSagaProcessor(
         saga.takeErrors().forEach{
             val event = eventFactory.newErrorEvent(aggregateId, aggregateVersion, it.message)
 
-            val eventEnvelope =  pack(aggregateId, it.version, event)
+            val eventEnvelope = pack(aggregateId, it.version, event)
             context().forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))
         }
     }
@@ -79,7 +79,7 @@ class EventSagaProcessor(
         val aggregateVersion = saga.events.version()
         val event = eventFactory.newTimeoutEvent(aggregateId, aggregateVersion, saga.events.missing())
 
-        val eventEnvelope =  pack(aggregateId, aggregateVersion, event)
+        val eventEnvelope = pack(aggregateId, aggregateVersion, event)
         context().forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))
     }
 }

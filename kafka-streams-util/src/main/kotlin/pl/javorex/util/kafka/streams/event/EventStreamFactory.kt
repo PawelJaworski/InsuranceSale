@@ -7,7 +7,7 @@ import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.KTable
 import org.apache.kafka.streams.kstream.Produced
 import org.apache.kafka.streams.processor.WallclockTimestampExtractor
-import pl.javorex.util.event.EventEnvelope
+import pl.javorex.event.util.EventEnvelope
 import kotlin.reflect.KClass
 
 typealias EventStream = KStream<String, EventEnvelope>

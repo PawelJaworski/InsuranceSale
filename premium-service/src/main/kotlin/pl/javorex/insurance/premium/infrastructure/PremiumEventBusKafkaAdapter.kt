@@ -9,8 +9,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import pl.javorex.insurance.premium.application.PremiumEventBus
 import pl.javorex.insurance.premium.domain.event.PremiumEvent
-import pl.javorex.util.event.EventEnvelope
-import pl.javorex.util.event.pack
+import pl.javorex.event.util.EventEnvelope
+import pl.javorex.event.util.pack
 import pl.javorex.util.kafka.streams.event.EventEnvelopeSerde
 import java.util.*
 

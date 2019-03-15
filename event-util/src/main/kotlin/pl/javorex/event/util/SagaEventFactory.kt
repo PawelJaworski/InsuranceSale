@@ -1,4 +1,4 @@
-package pl.javorex.util.event
+package pl.javorex.event.util
 
 interface SagaEventFactory {
     fun newErrorEvent(
