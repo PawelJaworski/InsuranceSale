@@ -1,15 +1,23 @@
 package pl.javorex.event.util
 
 interface SagaEventListener {
-    fun newErrorEvent(
+    fun onComplete(
             aggregateId: String,
             aggregateVersion: Long,
-            error: String
-    ) : Any
+            events: SagaEvents,
+            eventBus: SagaEventBus
+    )
 
-    fun newTimeoutEvent(
+    fun onError(
+            aggregateId: String,
+            error: EventSagaError,
+            eventBus: SagaEventBus
+    )
+
+    fun onTimeout(
             aggregateId: String,
             aggregateVersion: Long,
-            missedEvents: List<String>
-    ): Any
+            events: SagaEvents,
+            eventBus: SagaEventBus
+    )
 }

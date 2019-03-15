@@ -15,14 +15,11 @@ import java.time.Duration
 import java.util.*
 import javax.annotation.PostConstruct
 import org.apache.kafka.streams.state.*
+import pl.javorex.event.util.*
 import pl.javorex.insurance.creation.adapter.EventSagaProcessor
 import pl.javorex.insurance.creation.adapter.HeartBeatInterval
 import pl.javorex.insurance.creation.adapter.SinkType
 import pl.javorex.insurance.creation.adapter.StoreType
-import pl.javorex.event.util.EventEnvelope
-import pl.javorex.event.util.EventSagaTemplate
-import pl.javorex.event.util.EventSagaBuilder
-import pl.javorex.event.util.SagaEventListener
 
 @Service
 class InsuranceCreationSagaStream(
@@ -143,10 +140,31 @@ private enum class SagaSinks(
 }
 
 private object InsuranceCreationSagaListener : SagaEventListener {
-    override fun newErrorEvent(aggregateId: String, aggregateVersion: Long, error: String) =
-            InsuranceCreationSagaCorrupted(aggregateVersion, error)
+    override fun onComplete(aggregateId: String, aggregateVersion: Long, events: SagaEvents, eventBus: SagaEventBus) {
 
-    override fun newTimeoutEvent(aggregateId: String, aggregateVersion: Long, missing: List<String>) =
-            InsuranceCreationSagaCorrupted(aggregateVersion, "Request Timeout. Missing ${missing.joinToString(",")}")
+        val event = InsuranceCreationSagaCompleted(
+                events.get(ProposalAcceptedEvent::class.java),
+                events.get(PremiumCalculatedEvent::class.java)
+        )
+
+        eventBus.emit(aggregateId, aggregateVersion, event)
+    }
+
+    override fun onError(aggregateId: String, error: EventSagaError, eventBus: SagaEventBus) {
+        val event = InsuranceCreationSagaCorrupted(error.version, error.message)
+        eventBus.emitError(aggregateId, error.version, event)
+    }
+
+    override fun onTimeout(
+            aggregateId: String,
+            aggregateVersion: Long,
+            events: SagaEvents,
+            eventBus: SagaEventBus
+    ) {
+        val missingEvents = events.missing().joinToString(",")
+        val event = InsuranceCreationSagaCorrupted(aggregateVersion, "Request Timeout. Missing $missingEvents")
+
+        eventBus.emitError(aggregateId, aggregateVersion, event)
+    }
 
 }

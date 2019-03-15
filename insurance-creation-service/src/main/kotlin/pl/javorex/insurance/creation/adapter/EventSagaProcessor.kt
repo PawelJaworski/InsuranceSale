@@ -2,10 +2,7 @@ package pl.javorex.insurance.creation.adapter
 
 import org.apache.kafka.streams.processor.*
 import org.apache.kafka.streams.state.KeyValueStore
-import pl.javorex.event.util.EventSagaTemplate
-import pl.javorex.event.util.EventEnvelope
-import pl.javorex.event.util.SagaEventListener
-import pl.javorex.event.util.pack
+import pl.javorex.event.util.*
 import java.time.Duration
 
 class EventSagaProcessor(
@@ -13,33 +10,44 @@ class EventSagaProcessor(
         private val heartBeatInterval: HeartBeatInterval,
         private val storeType: StoreType,
         private val eventListener: SagaEventListener,
-        private val successSinkType: SinkType,
+        private val sinkType: SinkType,
         private val errorSinkType: SinkType
-) : AbstractProcessor<String, EventEnvelope>() {
+) : Processor<String, EventEnvelope> {
     private lateinit var store: KeyValueStore<String, EventSagaTemplate>
+    private lateinit var eventBus: ProcessorEventBus
 
-    override fun init(context: ProcessorContext?) {
-        super.init(context)
-        store = context().getStateStore(storeType.storeName) as KeyValueStore<String, EventSagaTemplate>
-
-        context()
+    override fun init(context: ProcessorContext) {
+        store = context
+                .getStateStore(storeType.storeName) as KeyValueStore<String, EventSagaTemplate>
+        eventBus = ProcessorEventBus(context!!, sinkType, errorSinkType)
+        context
                 .schedule(heartBeatInterval.duration, PunctuationType.WALL_CLOCK_TIME, this::doHeartBeat)
     }
 
-    override fun process(key: String?, event: EventEnvelope?) {
+    override fun process(aggregateId: String, event: EventEnvelope?) {
         if (event == null) {
             return
         }
 
-       val newSaga = store.get(key) ?: sagaSupplier()
-       newSaga.mergeEvent(event)
+       val saga = store.get(aggregateId) ?: sagaSupplier()
+       saga.mergeEvent(event)
+       store.put(aggregateId, saga)
 
-       if (newSaga.hasErrors()) {
-           fireErrors(key!!, newSaga)
-           store.delete(key)
-       } else {
-           store.put(key, newSaga)
-       }
+        when {
+            saga.isComplete() -> {
+                val events = saga.events
+                val aggregateVersion = events.version()
+                eventListener
+                        .onComplete(aggregateId, aggregateVersion, events, eventBus)
+                store.delete(aggregateId)
+            }
+            saga.hasErrors() -> {
+                saga.takeErrors().forEach{
+                    eventListener.onError(aggregateId, it, eventBus)
+                }
+                store.delete(aggregateId)
+            }
+        }
     }
 
     private fun doHeartBeat(timestamp: Long) {
@@ -63,23 +71,12 @@ class EventSagaProcessor(
         }
     }
 
-    private fun fireErrors(aggregateId: String, saga: EventSagaTemplate) {
-        val aggregateVersion = saga.events.version()
-        saga.takeErrors().forEach{
-            val event = eventListener.newErrorEvent(aggregateId, aggregateVersion, it.message)
-
-            val eventEnvelope = pack(aggregateId, it.version, event)
-            context().forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))
-        }
-    }
-
     private fun fireTimeoutEvent(aggregateId: String, saga: EventSagaTemplate) {
         val aggregateVersion = saga.events.version()
-        val event = eventListener.newTimeoutEvent(aggregateId, aggregateVersion, saga.events.missing())
-
-        val eventEnvelope = pack(aggregateId, aggregateVersion, event)
-        context().forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))
+        eventListener.onTimeout(aggregateId, aggregateVersion, saga.events, eventBus)
     }
+
+    override fun close() {}
 }
 
 class HeartBeatInterval(val duration: Duration) {
@@ -90,6 +87,23 @@ class HeartBeatInterval(val duration: Duration) {
             return HeartBeatInterval(duration)
         }
     }
+}
+
+private class ProcessorEventBus(
+        private val context: ProcessorContext,
+        private val sinkType: SinkType,
+        private val errorSinkType: SinkType
+
+) : SagaEventBus {
+    override fun emitError(aggregateId: String, aggregateVersion: Long, event: Any) {
+        val eventEnvelope = pack(aggregateId, aggregateVersion, event)
+        context.forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))
+    }
+
+    override fun emit(aggregateId: String, aggregateVersion: Long, event: Any) {
+        val eventEnvelope = pack(aggregateId, aggregateVersion, event)
+        context.forward(aggregateId, eventEnvelope, To.child(sinkType.sinkName))}
+
 }
 
 interface StoreType {
