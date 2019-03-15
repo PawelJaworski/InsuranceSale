@@ -1,7 +1,7 @@
 import * as React from "react";
-import axios from "axios"
 import Message from "./Message";
-import {proposalAccepted} from "../model/proposal/POST";
+import * as POST from "../model/proposal/POST";
+import * as GET from "../model/proposal/GET";
 
 const PROPOSAL_ID = "proposal-1"
 export default class InsuranceCriteriaComponent extends React.Component <{}> {
@@ -12,7 +12,8 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
     versionId: number = undefined
     constructor(props) {
         super(props)
-        this.versionId = new Date().getTime()
+        GET.nextProposalVersion()
+            .then(versionId => this.versionId  = versionId)
     }
 
     componentDidMount(): void {
@@ -38,7 +39,7 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
     }
 
     private onSubmit = (event) => {
-        proposalAccepted(PROPOSAL_ID, this.versionId, "GREAT_PRODUCT", 1)
+        POST.proposalAccepted(PROPOSAL_ID, this.versionId, "GREAT_PRODUCT", 12)
     }
     render() {
         return (
