@@ -16,10 +16,10 @@ import java.util.*
 import javax.annotation.PostConstruct
 import org.apache.kafka.streams.state.*
 import pl.javorex.event.util.*
-import pl.javorex.insurance.creation.adapter.EventSagaProcessor
-import pl.javorex.insurance.creation.adapter.HeartBeatInterval
-import pl.javorex.insurance.creation.adapter.SinkType
-import pl.javorex.insurance.creation.adapter.StoreType
+import pl.javorex.util.kafka.streams.event.EventSagaProcessor
+import pl.javorex.util.kafka.streams.event.HeartBeatInterval
+import pl.javorex.util.kafka.streams.event.SinkType
+import pl.javorex.util.kafka.streams.event.StoreType
 
 @Service
 class InsuranceCreationSagaStream(
@@ -67,12 +67,12 @@ class InsuranceCreationSagaStream(
                         SagaProcessors.INSURANCE_CREATION_SAGA.processorName,
                         ProcessorSupplier{
                             EventSagaProcessor(
-                                insuranceCreationSagaSupplier(),
-                                HeartBeatInterval.ofSeconds(2),
-                                SagaStores.INSURANCE_CREATION,
-                                InsuranceCreationSagaListener,
-                                SagaSinks.INSURANCE_CREATION,
-                                SagaSinks.INSURANCE_CREATION_ERROR
+                                    insuranceCreationSagaSupplier(),
+                                    HeartBeatInterval.ofSeconds(2),
+                                    SagaStores.INSURANCE_CREATION,
+                                    InsuranceCreationSagaListener,
+                                    SagaSinks.INSURANCE_CREATION,
+                                    SagaSinks.INSURANCE_CREATION_ERROR
                             )
                         },
                         SourceType.PROPOSAL_EVENTS.sourceName,

@@ -1,4 +1,4 @@
-package pl.javorex.insurance.creation.adapter
+package pl.javorex.util.kafka.streams.event
 
 import org.apache.kafka.streams.processor.*
 import org.apache.kafka.streams.state.KeyValueStore
