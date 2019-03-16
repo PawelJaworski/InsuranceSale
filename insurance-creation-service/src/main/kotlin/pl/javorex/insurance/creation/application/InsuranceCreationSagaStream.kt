@@ -9,17 +9,17 @@ import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
 import pl.javorex.insurance.premium.domain.event.PremiumCalculationFailedEvent
 import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 import pl.javorex.util.kafka.common.serialization.JsonPojoSerde
-import pl.javorex.util.kafka.streams.event.EventEnvelopeSerde
+import pl.javorex.kafka.streams.event.EventEnvelopeSerde
 import java.lang.Exception
 import java.time.Duration
 import java.util.*
 import javax.annotation.PostConstruct
 import org.apache.kafka.streams.state.*
 import pl.javorex.event.util.*
-import pl.javorex.util.kafka.streams.event.EventSagaProcessor
-import pl.javorex.util.kafka.streams.event.HeartBeatInterval
-import pl.javorex.util.kafka.streams.event.SinkType
-import pl.javorex.util.kafka.streams.event.StoreType
+import pl.javorex.kafka.streams.event.EventSagaProcessor
+import pl.javorex.kafka.streams.event.HeartBeatInterval
+import pl.javorex.kafka.streams.event.SinkType
+import pl.javorex.kafka.streams.event.StoreType
 
 @Service
 class InsuranceCreationSagaStream(

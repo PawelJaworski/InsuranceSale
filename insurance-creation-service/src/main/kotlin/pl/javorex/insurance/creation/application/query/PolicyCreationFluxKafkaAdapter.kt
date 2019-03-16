@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import pl.javorex.insurance.creation.query.PolicyCreation
 import pl.javorex.util.kafka.common.serialization.JsonPOJODeserializer
-import pl.javorex.util.kafka.streams.event.EventEnvelopeSerde
+import pl.javorex.kafka.streams.event.EventEnvelopeSerde
 import reactor.core.publisher.ConnectableFlux
 import reactor.core.publisher.Flux
 import reactor.kafka.receiver.KafkaReceiver

@@ -14,7 +14,7 @@ import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
 import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 import pl.javorex.event.util.EventEnvelope
 import pl.javorex.event.util.pack
-import pl.javorex.util.kafka.streams.event.EventEnvelopeSerde
+import pl.javorex.kafka.streams.event.EventEnvelopeSerde
 import java.math.BigDecimal
 import java.time.Duration
 import java.util.*

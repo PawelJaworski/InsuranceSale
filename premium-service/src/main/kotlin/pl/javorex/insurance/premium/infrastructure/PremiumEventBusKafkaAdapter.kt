@@ -11,7 +11,7 @@ import pl.javorex.insurance.premium.application.PremiumEventBus
 import pl.javorex.insurance.premium.domain.event.PremiumEvent
 import pl.javorex.event.util.EventEnvelope
 import pl.javorex.event.util.pack
-import pl.javorex.util.kafka.streams.event.EventEnvelopeSerde
+import pl.javorex.kafka.streams.event.EventEnvelopeSerde
 import java.util.*
 
 private val NO_PARTITION = null

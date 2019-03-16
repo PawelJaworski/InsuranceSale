@@ -1,4 +1,4 @@
-package pl.javorex.util.kafka.streams.event
+package pl.javorex.kafka.streams.event
 
 import org.apache.kafka.streams.processor.*
 import org.apache.kafka.streams.state.KeyValueStore

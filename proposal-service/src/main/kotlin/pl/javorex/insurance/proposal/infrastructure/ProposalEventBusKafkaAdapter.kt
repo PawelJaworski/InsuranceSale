@@ -9,7 +9,7 @@ import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import pl.javorex.util.kafka.streams.event.EventEnvelopeSerde
+import pl.javorex.kafka.streams.event.EventEnvelopeSerde
 import java.util.*
 import pl.javorex.event.util.EventEnvelope
 import pl.javorex.event.util.pack

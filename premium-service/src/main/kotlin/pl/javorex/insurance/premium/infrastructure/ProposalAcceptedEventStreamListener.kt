@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import pl.javorex.insurance.premium.application.ProposalAcceptedListener
 import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
-import pl.javorex.util.kafka.streams.event.newEventStream
+import pl.javorex.kafka.streams.event.newEventStream
 import java.util.*
 import javax.annotation.PostConstruct
 
