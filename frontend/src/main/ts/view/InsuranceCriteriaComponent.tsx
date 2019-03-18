@@ -1,12 +1,13 @@
 import * as React from "react";
-import Message from "./Message";
+import Messages from "./Messages";
 import * as POST from "../model/proposal/POST";
 import * as GET from "../model/proposal/GET";
+import {ReconnectableEventSource} from "../util/ReconnectableEventSource";
 
 const PROPOSAL_ID = "proposal-1"
 export default class InsuranceCriteriaComponent extends React.Component <{}> {
     state = {
-        error: "",
+        error: []
     }
 
     versionId: number = undefined
@@ -17,26 +18,28 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
     }
 
     componentDidMount(): void {
-        const eventSource = new EventSource("/insurance/creation/error/" + PROPOSAL_ID);
-        eventSource.onopen = (event: MessageEvent) => {
-            this.state.error = ""
-            this.setState({error: this.state.error})
+        const eventSource = new ReconnectableEventSource()
+        eventSource.beforeConnect = () => {
+            this.clearErrors()
         }
-
-        eventSource.onmessage = (event: MessageEvent) => {
+        eventSource.onMessage = (event: MessageEvent) => {
             const message = event.data
-            console.log("messaging " + message)
-            this.state.error = message;
-            this.setState({error: this.state.error});
+            this.displayError(message)
         }
-        eventSource.onerror = (error: any) =>  this.displayError("Policy service error")
+        eventSource.onError = (error: any) =>  this.displayError("Policy service error")
+        eventSource.connect("/insurance/creation/error/" + PROPOSAL_ID)
     }
 
     private displayError(error: string) {
-        console.log("displaying " + error)
-        this.state.error = error
+        this.state.error.push(error)
         this.setState({error: this.state.error})
     }
+
+    private clearErrors() {
+        this.state.error = []
+        this.setState({error: this.state.error})
+    }
+
 
     private onSubmit = (event) => {
         POST.proposalAccepted(PROPOSAL_ID, this.versionId, "GREAT_PRODUCT", 12)
@@ -46,7 +49,7 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
             <div className="container">
                 <div className="row centered">
                     <div className={rowCss}>
-                        <Message message = {this.state.error}/>
+                        <Messages messages = {this.state.error}/>
                     </div>
                     <div className={rowCss}>
                         <h1 className="card-header">
