@@ -5,8 +5,8 @@ export function proposalAccepted(
     version: number,
     insuranceProduct: string,
     numberOfPremiums: number
-) {
-    axios.post("/proposal/accept", {
+) : Promise<void> {
+    return axios.post("/proposal/accept", {
         proposalId: proposalId,
         version: version,
         insuranceProduct: insuranceProduct,

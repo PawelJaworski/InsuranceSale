@@ -1,6 +1,6 @@
 import * as React from "react";
 
-const Messages = (props) => {
+const ErrorMessages = (props) => {
     const {messages} = props
 
     return <React.Fragment>
@@ -11,4 +11,4 @@ const Messages = (props) => {
     </React.Fragment>
 }
 
-export default Messages;
+export default ErrorMessages;
