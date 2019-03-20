@@ -20,7 +20,7 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
 
     componentDidMount(): void {
         const eventSource = new ReconnectableEventSource()
-        eventSource.onConnect = () => {
+        eventSource.onConnectionAlive = () => {
             this.clearInsuranceCreationErrors()
         }
         eventSource.onMessage = (event: MessageEvent) => {

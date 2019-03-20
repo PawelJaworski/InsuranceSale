@@ -1,7 +1,7 @@
 export class ReconnectableEventSource {
     private eventSource: EventSource
 
-    onConnect: () => void = () => {}
+    onConnectionAlive: () => void = () => {}
     onOpen: (event: MessageEvent) => void = (event: MessageEvent) => {}
     onMessage: (event: MessageEvent) => void = (event: MessageEvent) => {}
     onError: (error: MessageEvent) => void = (error: MessageEvent) =>  {}
@@ -13,7 +13,7 @@ export class ReconnectableEventSource {
     heartBeat() {
         setTimeout(() => {
             if (this.eventSource.readyState == 0) {
-                this.onConnect()
+                this.onConnectionAlive()
             }
             this.heartBeat()},
             2000
