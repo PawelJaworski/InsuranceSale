@@ -11,6 +11,5 @@ data class InsuranceCreationSagaCompleted(
 )
 
 data class InsuranceCreationSagaCorrupted(
-        val version: Long,
         val error: String
 )

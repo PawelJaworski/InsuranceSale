@@ -15,6 +15,7 @@ import java.time.Duration
 import java.util.*
 import javax.annotation.PostConstruct
 import org.apache.kafka.streams.state.*
+import pl.javorex.event.saga.RequestTimeout
 import pl.javorex.event.util.*
 import pl.javorex.kafka.streams.event.EventSagaProcessor
 import pl.javorex.kafka.streams.event.HeartBeatInterval
@@ -150,9 +151,19 @@ private object InsuranceCreationSagaListener : SagaEventListener {
         eventBus.emit(aggregateId, aggregateVersion, event)
     }
 
-    override fun onError(aggregateId: String, error: EventSagaError, eventBus: SagaEventBus) {
-        val event = InsuranceCreationSagaCorrupted(error.version, error.message)
-        eventBus.emitError(aggregateId, error.version, event)
+    override fun onError(error: EventEnvelope, eventBus: SagaEventBus) {
+        val event = when {
+            error.isTypeOf(PremiumCalculationFailedEvent::class.java) -> {
+                val premiumCalculationFailed = error.unpack(PremiumCalculationFailedEvent::class.java)
+                InsuranceCreationSagaCorrupted(premiumCalculationFailed.error)
+            }
+            else -> {
+                val errorMessage = error.payload.toString()
+                InsuranceCreationSagaCorrupted(errorMessage)
+            }
+        }
+
+        eventBus.emitError(error.aggregateId, error.aggregateVersion, event)
     }
 
     override fun onTimeout(
@@ -162,7 +173,7 @@ private object InsuranceCreationSagaListener : SagaEventListener {
             eventBus: SagaEventBus
     ) {
         val missingEvents = events.missing().joinToString(",")
-        val event = InsuranceCreationSagaCorrupted(aggregateVersion, "Request Timeout. Missing $missingEvents")
+        val event = InsuranceCreationSagaCorrupted("Request Timeout. Missing $missingEvents")
 
         eventBus.emitError(aggregateId, aggregateVersion, event)
     }

@@ -1,29 +1,34 @@
 package pl.javorex.event.util
 
+import pl.javorex.event.saga.DoubleEvent
+import pl.javorex.event.saga.OtherRequestAlreadyPending
+
 val LACK_OF_EVENT = null
 
 data class EventSagaTemplate(
         @PublishedApi
         internal val timeout: Long = 0,
         val events: SagaEvents = SagaEvents(),
-        internal val errors: ArrayList<EventSagaError> = arrayListOf(),
+        internal val expectedErrors: HashSet<String> = hashSetOf(),
+        internal val errors: ArrayList<EventEnvelope> = arrayListOf(),
         internal val creationTimestamp: Long = System.currentTimeMillis()
 ) {
 
     fun mergeEvent(event: EventEnvelope) {
         val eventType = event.eventType
-        val eventVersion = event.aggregateVersion
+        val aggregateId = event.aggregateId
+        val aggregateVersion = event.aggregateVersion
         when {
-            !events.contains(eventType) ->
+            !events.expects(eventType) && !expectedErrors.contains(eventType) ->
                 return
-            events.isVersionDiffers(eventVersion) ->
-                putError("Other request pending", eventVersion)
+            events.isVersionDiffers(aggregateVersion) ->
+                putError(aggregateId, aggregateVersion, OtherRequestAlreadyPending())
             events.alreadyContains(eventType) ->
-                putError("Double event of type $eventType")
-            else ->
-                events.collectOrHandleError(event) {
-                    putError(event.payload["error"].asText())
-                }
+                putError(aggregateId, aggregateVersion, DoubleEvent(eventType))
+            events.expects(eventType) ->
+                events.collect(event)
+            expectedErrors.contains(eventType) ->
+                putError(event)
         }
     }
 
@@ -37,17 +42,20 @@ data class EventSagaTemplate(
 
     fun hasErrors() = errors.isNotEmpty()
 
-    fun takeErrors(): List<EventSagaError> {
+    fun takeErrors(): List<EventEnvelope> {
         val takenErrors = errors.toMutableList()
 
         errors.clear()
         return takenErrors
     }
 
-    private fun putError(message: String, version: Long = this.events.version) {
-        errors += EventSagaError(message, version)
+    private fun putError(aggregateId: String, aggregateVersion: Long, event: Any) {
+        errors += pack(aggregateId, aggregateVersion, event)
     }
 
+    private fun putError(event: EventEnvelope) {
+        errors += event
+    }
 }
 
 private const val NO_VERSION = Long.MIN_VALUE
@@ -58,14 +66,12 @@ data class SagaEvents(
         internal val starting: HashMap<String, EventEnvelope?> = hashMapOf(),
         @PublishedApi
         internal val required: HashMap<String, EventEnvelope?> = hashMapOf(),
-        internal val expectedErrors: HashSet<String> = hashSetOf(),
         internal var startedTimestamp: Long = EVENT_HAVENT_ARRIVED_YET,
         internal var version: Long = NO_VERSION
 ) {
-    fun collectOrHandleError(event: EventEnvelope, onErrorConsumer: (EventEnvelope) -> Unit) {
+    fun collect(event: EventEnvelope) {
         val eventType = event.eventType
         when {
-            expectedErrors.contains(eventType) -> onErrorConsumer.invoke(event)
             starting.contains(eventType) -> {
                 if (isStarted()) {
                     throw IllegalStateException("Saga already started for ${event.aggregateId}")
@@ -100,13 +106,8 @@ data class SagaEvents(
 
     internal fun isVersionDiffers(otherVersion: Long) = version != NO_VERSION && version != otherVersion
 
-    internal fun expectError(eventType: String) {
-        expectedErrors += eventType
-    }
-
-    internal fun contains(eventType: String) = starting.contains(eventType)
+    internal fun expects(eventType: String) = starting.contains(eventType)
             || required.contains(eventType)
-            || expectedErrors.contains(eventType)
 
     internal fun alreadyContains(eventType: String) =
             starting[eventType] != LACK_OF_EVENT || required[eventType] != LACK_OF_EVENT
@@ -114,5 +115,3 @@ data class SagaEvents(
     internal fun containsAllRequired() =
             starting.none{ it.value == LACK_OF_EVENT } && required.none{ it.value == LACK_OF_EVENT }
 }
-
-data class EventSagaError(val message: String, val version: Long)

@@ -43,7 +43,7 @@ class EventSagaProcessor(
             }
             saga.hasErrors() -> {
                 saga.takeErrors().forEach{
-                    eventListener.onError(aggregateId, it, eventBus)
+                    eventListener.onError(it, eventBus)
                 }
                 store.delete(aggregateId)
             }

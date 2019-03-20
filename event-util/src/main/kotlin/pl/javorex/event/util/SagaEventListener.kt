@@ -8,11 +8,7 @@ interface SagaEventListener {
             eventBus: SagaEventBus
     )
 
-    fun onError(
-            aggregateId: String,
-            error: EventSagaError,
-            eventBus: SagaEventBus
-    )
+    fun onError(error: EventEnvelope, eventBus: SagaEventBus)
 
     fun onTimeout(
             aggregateId: String,

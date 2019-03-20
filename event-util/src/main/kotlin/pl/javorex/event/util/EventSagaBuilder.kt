@@ -2,9 +2,10 @@ package pl.javorex.event.util
 
 import java.time.Duration
 
-class EventSagaBuilder(
-        private var events: SagaEvents = SagaEvents()
-) {
+class EventSagaBuilder {
+    private var events: SagaEvents = SagaEvents()
+    private val expectedErrors: HashSet<String> = hashSetOf()
+
     private var timeout: Long = 0
 
     fun withTimeout(timeout: Duration): EventSagaBuilder {
@@ -24,12 +25,12 @@ class EventSagaBuilder(
         return this
     }
     fun expectErrors(clazz: Class<*>): EventSagaBuilder {
-        events.expectError(clazz.simpleName)
+        expectedErrors += clazz.simpleName
 
         return this
     }
 
     fun build() : EventSagaTemplate {
-        return EventSagaTemplate(timeout, events)
+        return EventSagaTemplate(timeout, events, expectedErrors)
     }
 }
