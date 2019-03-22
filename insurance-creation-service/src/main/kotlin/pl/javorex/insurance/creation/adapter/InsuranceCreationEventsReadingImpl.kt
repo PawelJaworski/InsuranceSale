@@ -1,4 +1,4 @@
-package pl.javorex.insurance.creation.application.query
+package pl.javorex.insurance.creation.adapter
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -6,9 +6,7 @@ import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.connect.json.JsonDeserializer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import pl.javorex.insurance.creation.query.PolicyCreation
-import pl.javorex.util.kafka.common.serialization.JsonPOJODeserializer
-import pl.javorex.kafka.streams.event.EventEnvelopeSerde
+import pl.javorex.insurance.creation.application.read.InsuranceCreationEventsReading
 import reactor.core.publisher.ConnectableFlux
 import reactor.core.publisher.Flux
 import reactor.kafka.receiver.KafkaReceiver
@@ -17,12 +15,12 @@ import reactor.kafka.receiver.ReceiverRecord
 import java.util.HashMap
 
 @Service
-class PolicyCreationFluxKafkaAdapter(
+class InsuranceCreationEventsReadingImpl(
         @Value("\${kafka.topic.insurance-creation-error-events}") val topic: String,
         @Value("\${kafka.bootstrap-servers}") val bootstrapServers: String,
         @Value("\${kafka.consumer.groupId.policyEventsRead}}") val groupId: String,
         @Value("\${kafka.consumer.clientId.policyEventsRead}") val clientId: String
-) : PolicyCreation {
+) : InsuranceCreationEventsReading {
     private val flux: ConnectableFlux<ReceiverRecord<String, ObjectNode>> = KafkaReceiver
             .create<String, ObjectNode>(
                     receiverOptions(listOf(topic))
@@ -30,7 +28,7 @@ class PolicyCreationFluxKafkaAdapter(
             .receive()
             .replay(0)
 
-    override fun fluxForProposalId(proposalId: String) : Flux<String> = flux
+    override fun forProposalId(proposalId: String) : Flux<String> = flux
             .autoConnect()
             .filter{ it.key() == proposalId }
             .map { it.value() }

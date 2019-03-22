@@ -14,6 +14,9 @@ import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
 import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 import pl.javorex.event.util.EventEnvelope
 import pl.javorex.event.util.pack
+import pl.javorex.insurance.creation.adapter.InsuranceCreationSagaEventStream
+import pl.javorex.insurance.creation.domain.event.InsuranceCreationSagaCompleted
+import pl.javorex.insurance.creation.domain.event.InsuranceCreationSagaCorrupted
 import pl.javorex.kafka.streams.event.EventEnvelopeSerde
 import java.math.BigDecimal
 import java.time.Duration
@@ -30,7 +33,7 @@ private const val INSURANCE_CREATION_ERROR_TOPIC = "insurance-creation-error-tes
 class PolicyCreationSagaStreamSpec {
     private lateinit var topologyTestDriver: TopologyTestDriver
 
-    private val newPolicySaga = InsuranceCreationSagaStream(
+    private val newPolicySaga = InsuranceCreationSagaEventStream(
             BOOTSTRAP_SERVERS,
             PROPOSAL_EVENTS_TOPIC,
             PREMIUM_EVENTS_TOPIC,

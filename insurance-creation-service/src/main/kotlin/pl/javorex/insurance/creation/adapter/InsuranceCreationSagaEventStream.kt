@@ -1,29 +1,26 @@
-package pl.javorex.insurance.creation.application
+package pl.javorex.insurance.creation.adapter
 
 import org.apache.kafka.common.serialization.*
 import org.apache.kafka.streams.*
 import org.apache.kafka.streams.processor.*
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
-import pl.javorex.insurance.premium.domain.event.PremiumCalculationFailedEvent
-import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 import pl.javorex.util.kafka.common.serialization.JsonPojoSerde
 import pl.javorex.kafka.streams.event.EventEnvelopeSerde
 import java.lang.Exception
-import java.time.Duration
 import java.util.*
 import javax.annotation.PostConstruct
 import org.apache.kafka.streams.state.*
-import pl.javorex.event.saga.RequestTimeout
 import pl.javorex.event.util.*
+import pl.javorex.insurance.creation.application.InsuranceCreationSagaEventListener
+import pl.javorex.insurance.creation.application.InsuranceCreationSagaTemplateFactory
 import pl.javorex.kafka.streams.event.EventSagaProcessor
 import pl.javorex.kafka.streams.event.HeartBeatInterval
 import pl.javorex.kafka.streams.event.SinkType
 import pl.javorex.kafka.streams.event.StoreType
 
 @Service
-class InsuranceCreationSagaStream(
+class InsuranceCreationSagaEventStream(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
         @Value("\${kafka.topic.proposal-events}") private val proposalEventsTopic: String,
         @Value("\${kafka.topic.premium-events}") private val premiumEventsTopic: String,
@@ -68,10 +65,10 @@ class InsuranceCreationSagaStream(
                         SagaProcessors.INSURANCE_CREATION_SAGA.processorName,
                         ProcessorSupplier{
                             EventSagaProcessor(
-                                    insuranceCreationSagaSupplier(),
+                                    { InsuranceCreationSagaTemplateFactory.newSagaTemplate() },
                                     HeartBeatInterval.ofSeconds(2),
                                     SagaStores.INSURANCE_CREATION,
-                                    InsuranceCreationSagaListener,
+                                    InsuranceCreationSagaEventListener,
                                     SagaSinks.INSURANCE_CREATION,
                                     SagaSinks.INSURANCE_CREATION_ERROR
                             )
@@ -91,16 +88,6 @@ class InsuranceCreationSagaStream(
                         SagaProcessors.INSURANCE_CREATION_SAGA
                 );
     }
-
-    private fun insuranceCreationSagaSupplier() = {
-            EventSagaBuilder()
-                    .withTimeout(Duration.ofSeconds(5))
-                    .startsWith(ProposalAcceptedEvent::class.java)
-                    .requires(PremiumCalculatedEvent::class.java)
-                    .expectErrors(PremiumCalculationFailedEvent::class.java)
-                    .build()
-        }
-
 }
 
 private fun Topology.addSource(sourceType: SourceType, topic: String): Topology {
@@ -138,44 +125,4 @@ private enum class SagaSinks(
 )  : SinkType {
     INSURANCE_CREATION("Insurance-Creation-Sink"),
     INSURANCE_CREATION_ERROR("Insurance-Creation-Error-Sink")
-}
-
-private object InsuranceCreationSagaListener : SagaEventListener {
-    override fun onComplete(aggregateId: String, aggregateVersion: Long, events: SagaEvents, eventBus: SagaEventBus) {
-
-        val event = InsuranceCreationSagaCompleted(
-                events.get(ProposalAcceptedEvent::class.java),
-                events.get(PremiumCalculatedEvent::class.java)
-        )
-
-        eventBus.emit(aggregateId, aggregateVersion, event)
-    }
-
-    override fun onError(error: EventEnvelope, eventBus: SagaEventBus) {
-        val event = when {
-            error.isTypeOf(PremiumCalculationFailedEvent::class.java) -> {
-                val premiumCalculationFailed = error.unpack(PremiumCalculationFailedEvent::class.java)
-                InsuranceCreationSagaCorrupted(premiumCalculationFailed.error)
-            }
-            else -> {
-                val errorMessage = error.payload.toString()
-                InsuranceCreationSagaCorrupted(errorMessage)
-            }
-        }
-
-        eventBus.emitError(error.aggregateId, error.aggregateVersion, event)
-    }
-
-    override fun onTimeout(
-            aggregateId: String,
-            aggregateVersion: Long,
-            events: SagaEvents,
-            eventBus: SagaEventBus
-    ) {
-        val missingEvents = events.missing().joinToString(",")
-        val event = InsuranceCreationSagaCorrupted("Request Timeout. Missing $missingEvents")
-
-        eventBus.emitError(aggregateId, aggregateVersion, event)
-    }
-
 }

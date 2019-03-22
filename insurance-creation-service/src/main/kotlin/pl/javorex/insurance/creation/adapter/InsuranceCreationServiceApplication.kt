@@ -1,4 +1,4 @@
-package pl.javorex.insurance
+package pl.javorex.insurance.creation.adapter
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
