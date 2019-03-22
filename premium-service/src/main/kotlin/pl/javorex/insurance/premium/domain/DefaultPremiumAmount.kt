@@ -5,7 +5,7 @@ import java.math.RoundingMode
 
 internal object DefaultPremiumAmount : PremiumCalculationPolicy {
     private val overallPremium: BigDecimal = BigDecimal.TEN
-    override fun `for`(numberOfPremium: NumberOfPremium): PremiumAmount {
+    override fun applyTo(numberOfPremium: NumberOfPremium): PremiumAmount {
         val value = overallPremium.divide(
                 BigDecimal.valueOf(numberOfPremium.value.toLong()),
                 RoundingMode.HALF_UP

@@ -55,7 +55,7 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
 
 
     private onSubmit = (event) => {
-        POST.proposalAccepted(PROPOSAL_ID, this.versionId, "GREAT_PRODUCT", 12)
+        POST.proposalAccepted(PROPOSAL_ID, this.versionId, "GREAT_PRODUCT", 1)
             .catch(reason => {
                 this.clearProposalError()
                 this.displayProposalError("Proposal-Service " + reason + ".")

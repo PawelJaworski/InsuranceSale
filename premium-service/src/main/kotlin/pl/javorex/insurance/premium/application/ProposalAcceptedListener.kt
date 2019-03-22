@@ -2,7 +2,6 @@ package pl.javorex.insurance.premium.application
 
 import pl.javorex.insurance.premium.domain.DefaultPremiumAmount
 import pl.javorex.insurance.premium.domain.NumberOfPremium
-import pl.javorex.insurance.premium.domain.premiumAmount
 import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
 import pl.javorex.insurance.premium.domain.event.PremiumCalculationFailedEvent
 import pl.javorex.insurance.premium.domain.event.PremiumEvent
@@ -17,7 +16,7 @@ class ProposalAcceptedListener (
     fun onProposalAccepted(proposalAccepted: ProposalAcceptedEvent, proposalVersion: Long) {
         val calculationTry = Try {
             val numberOfPremium = NumberOfPremium(proposalAccepted.numberOfPremiums)
-            premiumAmount() FOR numberOfPremium USING DefaultPremiumAmount
+            DefaultPremiumAmount.applyTo(numberOfPremium)
         }
 
         val event: PremiumEvent = when (calculationTry) {
