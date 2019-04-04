@@ -19,6 +19,9 @@ data class EventEnvelope(
     fun withTimestamp(timestamp: Long) = EventEnvelope(aggregateId, timestamp, aggregateVersion, eventType, payload)
 }
 
+fun repack(other: EventEnvelope, event: Any) =
+        pack(other.aggregateId, other.aggregateVersion, event)
+
 fun pack(aggregateId: String, aggregateVersion: Long, event: Any): EventEnvelope {
     val eventType = event::class.java.simpleName
     val payload = newObjectMapper().convertValue(event, JsonNode::class.java)

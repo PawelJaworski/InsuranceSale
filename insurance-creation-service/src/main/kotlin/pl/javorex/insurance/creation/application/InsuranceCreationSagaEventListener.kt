@@ -4,6 +4,7 @@ import pl.javorex.event.util.EventEnvelope
 import pl.javorex.event.util.SagaEventBus
 import pl.javorex.event.util.SagaEventListener
 import pl.javorex.event.util.SagaEvents
+import pl.javorex.insurance.creation.domain.event.CreateInsuranceFromProposal
 import pl.javorex.insurance.creation.domain.event.InsuranceCreationSagaCompleted
 import pl.javorex.insurance.creation.domain.event.InsuranceCreationSagaCorrupted
 import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
@@ -14,7 +15,7 @@ internal object InsuranceCreationSagaEventListener : SagaEventListener {
     override fun onComplete(aggregateId: String, aggregateVersion: Long, events: SagaEvents, eventBus: SagaEventBus) {
 
         val event = InsuranceCreationSagaCompleted(
-                events.get(ProposalAcceptedEvent::class.java),
+                events.get(CreateInsuranceFromProposal::class.java),
                 events.get(PremiumCalculatedEvent::class.java)
         )
 
@@ -37,7 +38,7 @@ internal object InsuranceCreationSagaEventListener : SagaEventListener {
 
     override fun onTimeout(aggregateId: String, aggregateVersion: Long, events: SagaEvents, eventBus: SagaEventBus) {
         val missingEvents = events.missing().joinToString(",")
-        val event = InsuranceCreationSagaCorrupted("Request Timeout. Missing $missingEvents")
+        val event = "Request Timeout. Missing $missingEvents"
 
         eventBus.emitError(aggregateId, aggregateVersion, event)
     }

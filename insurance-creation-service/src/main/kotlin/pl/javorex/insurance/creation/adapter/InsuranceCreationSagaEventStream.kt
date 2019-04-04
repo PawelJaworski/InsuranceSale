@@ -59,7 +59,7 @@ class InsuranceCreationSagaEventStream(
                 .keyValueStoreBuilder(storeSupplier, Serdes.String(), JsonPojoSerde(EventSagaTemplate::class.java))
 
         return StreamsBuilder().build()
-                .addSource(SourceType.PROPOSAL_EVENTS, proposalEventsTopic)
+                .addSource(SourceType.INSURANCE_EVENTS, insuranceCreationEvents)
                 .addSource(SourceType.PREMIUM_EVENTS, premiumEventsTopic)
                 .addProcessor(
                         SagaProcessors.INSURANCE_CREATION_SAGA.processorName,
@@ -73,7 +73,7 @@ class InsuranceCreationSagaEventStream(
                                     SagaSinks.INSURANCE_CREATION_ERROR
                             )
                         },
-                        SourceType.PROPOSAL_EVENTS.sourceName,
+                        SourceType.INSURANCE_EVENTS.sourceName,
                         SourceType.PREMIUM_EVENTS.sourceName
                 )
                 .addStateStore(storeBuilder, SagaProcessors.INSURANCE_CREATION_SAGA.processorName)
@@ -109,6 +109,7 @@ private enum class SourceType(
         val keyDeserializer: StringDeserializer = StringDeserializer(),
         val valueDeserializer: Deserializer<EventEnvelope> = EventEnvelopeSerde().deserializer()
 ) {
+    INSURANCE_EVENTS("Insurance-Events-Sourece"),
     PROPOSAL_EVENTS("Proposal-Events-Source"),
     PREMIUM_EVENTS("Premium-Events-Source")
 }

@@ -5,6 +5,7 @@ import pl.javorex.insurance.premium.domain.event.PremiumCalculationFailedEvent
 import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 import pl.javorex.event.util.EventEnvelope
 import pl.javorex.event.util.EventSagaBuilder
+import pl.javorex.insurance.creation.domain.event.CreateInsuranceFromProposal
 import java.time.Duration
 import java.time.Duration.ofSeconds
 
@@ -12,7 +13,7 @@ internal object InsuranceCreationSagaTemplateFactory {
     fun newSagaTemplate() =
             EventSagaBuilder()
                     .withTimeout(ofSeconds(5))
-                    .startsWith(ProposalAcceptedEvent::class.java)
+                    .startsWith(CreateInsuranceFromProposal::class.java)
                     .requires(PremiumCalculatedEvent::class.java)
                     .expectErrors(PremiumCalculationFailedEvent::class.java)
                     .build()
