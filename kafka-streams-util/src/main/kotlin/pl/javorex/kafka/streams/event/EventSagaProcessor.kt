@@ -8,17 +8,17 @@ import java.time.Duration
 class EventSagaProcessor(
         private val sagaSupplier: () -> EventSagaTemplate,
         private val heartBeatInterval: HeartBeatInterval,
-        private val storeType: StoreType,
+        private val storeName: String,
         private val eventListener: SagaEventListener,
-        private val sinkType: SinkType,
-        private val errorSinkType: SinkType
+        private val sinkType: String,
+        private val errorSinkType: String
 ) : Processor<String, EventEnvelope> {
     private lateinit var store: KeyValueStore<String, EventSagaTemplate>
     private lateinit var eventBus: ProcessorEventBus
 
     override fun init(context: ProcessorContext) {
         store = context
-                .getStateStore(storeType.storeName) as KeyValueStore<String, EventSagaTemplate>
+                .getStateStore(storeName) as KeyValueStore<String, EventSagaTemplate>
         eventBus = ProcessorEventBus(context!!, sinkType, errorSinkType)
         context
                 .schedule(heartBeatInterval.duration, PunctuationType.WALL_CLOCK_TIME, this::doHeartBeat)
@@ -91,26 +91,18 @@ class HeartBeatInterval(val duration: Duration) {
 
 private class ProcessorEventBus(
         private val context: ProcessorContext,
-        private val sinkType: SinkType,
-        private val errorSinkType: SinkType
+        private val sinkName: String,
+        private val errorSinkName: String
 
 ) : SagaEventBus {
     override fun emitError(aggregateId: String, aggregateVersion: Long, event: Any) {
         val eventEnvelope = pack(aggregateId, aggregateVersion, event)
-        context.forward(aggregateId, eventEnvelope, To.child(errorSinkType.sinkName))
+        context.forward(aggregateId, eventEnvelope, To.child(errorSinkName))
     }
 
     override fun emit(aggregateId: String, aggregateVersion: Long, event: Any) {
         val eventEnvelope = pack(aggregateId, aggregateVersion, event)
-        context.forward(aggregateId, eventEnvelope, To.child(sinkType.sinkName))}
+        context.forward(aggregateId, eventEnvelope, To.child(sinkName))}
 
-}
-
-interface StoreType {
-    val storeName: String
-}
-
-interface SinkType {
-    val sinkName: String
 }
 
