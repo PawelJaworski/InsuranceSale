@@ -13,13 +13,17 @@ import org.apache.kafka.streams.state.*
 import pl.javorex.event.util.*
 import pl.javorex.insurance.creation.application.InsuranceCreationSagaEventListener
 import pl.javorex.insurance.creation.application.InsuranceCreationSagaTemplateFactory
+import pl.javorex.insurance.creation.application.UniqueProposalAcceptedEventVersionListener
 import pl.javorex.kafka.streams.event.*
 
+private const val PROPOSAL_EVENTS_SOURCE = "Proposal-Events-Source"
 private const val INSURANCE_EVENTS_SOURCE = "Insurance-Events-Source"
 private const val PREMIUM_EVENTS_SOURCE = "Premium-Events-Source"
 
+private const val PROPOSAL_ACCEPTED_UNIQUE_EVENT_PROCESSOR = "Proposal-Accepted-Unique-Event-Processor"
 private const val INSURANCE_CREATION_SAGA_PROCESSOR = "Insurance-Creation-Saga-Processor"
 
+private const val UNIQUE_PROPOSAL_ACCEPTED_STORE = "Unique-Proposal-Accepted-Store"
 private const val INSURANCE_CREATION_STORE = "Insurance-Creation-Saga-Store"
 
 private const val INSURANCE_CREATION_SINK = "Insurance-Creation-Sink"
@@ -28,6 +32,7 @@ private const val INSURANCE_CREATION_ERROR_SINK = "Insurance-Creation-Error-Sink
 @Service
 class InsuranceCreationSagaEventStream(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
+        @Value("\${kafka.topic.proposal-events}") private val proposalEventsTopic: String,
         @Value("\${kafka.topic.premium-events}") private val premiumEventsTopic: String,
         @Value("\${kafka.topic.insurance-creation-events}") private val insuranceCreationEvents: String,
         @Value("\${kafka.topic.insurance-creation-error-events}") private val insuranceCreationErrorTopic: String
@@ -64,10 +69,20 @@ class InsuranceCreationSagaEventStream(
                 .persistentKeyValueStore(INSURANCE_CREATION_STORE)
         val storeBuilder = Stores
                 .keyValueStoreBuilder(storeSupplier, Serdes.String(), JsonPojoSerde(EventSagaTemplate::class.java))
+        val proposalAcceptedUniqueEventStoreSupplier: KeyValueBytesStoreSupplier = Stores
+                .persistentKeyValueStore(UNIQUE_PROPOSAL_ACCEPTED_STORE)
+        val proposalAcceptedUniqueEventStoreBuilder = Stores
+                .keyValueStoreBuilder(proposalAcceptedUniqueEventStoreSupplier, Serdes.String(), EventEnvelopeSerde())
 
         return StreamsBuilder().build()
+                .addSource(PROPOSAL_EVENTS_SOURCE, proposalEventsTopic)
                 .addSource(INSURANCE_EVENTS_SOURCE, insuranceCreationEvents)
                 .addSource(PREMIUM_EVENTS_SOURCE, premiumEventsTopic)
+                .addProcessor(
+                        PROPOSAL_ACCEPTED_UNIQUE_EVENT_PROCESSOR,
+                        ProcessorSupplier(this::uniqueProposalAcceptedVersionProcessor),
+                        PROPOSAL_EVENTS_SOURCE
+                )
                 .addProcessor(
                         INSURANCE_CREATION_SAGA_PROCESSOR,
                         ProcessorSupplier(this::newInsuranceCreationSagaProcessor),
@@ -75,9 +90,27 @@ class InsuranceCreationSagaEventStream(
                         PREMIUM_EVENTS_SOURCE
                 )
                 .addStateStore(storeBuilder, INSURANCE_CREATION_SAGA_PROCESSOR)
-                .addSink(INSURANCE_CREATION_SINK, insuranceCreationEvents, INSURANCE_CREATION_SAGA_PROCESSOR)
-                .addSink(INSURANCE_CREATION_ERROR_SINK, insuranceCreationErrorTopic, INSURANCE_CREATION_SAGA_PROCESSOR);
+                .addStateStore(proposalAcceptedUniqueEventStoreBuilder, PROPOSAL_ACCEPTED_UNIQUE_EVENT_PROCESSOR)
+                .addSink(
+                        INSURANCE_CREATION_SINK,
+                        insuranceCreationEvents,
+                        PROPOSAL_ACCEPTED_UNIQUE_EVENT_PROCESSOR,
+                        INSURANCE_CREATION_SAGA_PROCESSOR
+                )
+                .addSink(
+                        INSURANCE_CREATION_ERROR_SINK,
+                        insuranceCreationErrorTopic,
+                        PROPOSAL_ACCEPTED_UNIQUE_EVENT_PROCESSOR,
+                        INSURANCE_CREATION_SAGA_PROCESSOR
+                );
     }
+
+    private fun uniqueProposalAcceptedVersionProcessor() = UniqueEventVersionProcessor(
+        UNIQUE_PROPOSAL_ACCEPTED_STORE,
+        UniqueProposalAcceptedEventVersionListener,
+        INSURANCE_CREATION_SINK,
+        INSURANCE_CREATION_ERROR_SINK
+    )
 
     private fun newInsuranceCreationSagaProcessor() = EventSagaProcessor(
             { InsuranceCreationSagaTemplateFactory.newSagaTemplate() },

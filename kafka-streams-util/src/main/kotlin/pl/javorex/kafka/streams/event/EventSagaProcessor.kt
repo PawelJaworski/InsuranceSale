@@ -88,21 +88,3 @@ class HeartBeatInterval(val duration: Duration) {
         }
     }
 }
-
-private class ProcessorEventBus(
-        private val context: ProcessorContext,
-        private val sinkName: String,
-        private val errorSinkName: String
-
-) : SagaEventBus {
-    override fun emitError(aggregateId: String, aggregateVersion: Long, event: Any) {
-        val eventEnvelope = pack(aggregateId, aggregateVersion, event)
-        context.forward(aggregateId, eventEnvelope, To.child(errorSinkName))
-    }
-
-    override fun emit(aggregateId: String, aggregateVersion: Long, event: Any) {
-        val eventEnvelope = pack(aggregateId, aggregateVersion, event)
-        context.forward(aggregateId, eventEnvelope, To.child(sinkName))}
-
-}
-

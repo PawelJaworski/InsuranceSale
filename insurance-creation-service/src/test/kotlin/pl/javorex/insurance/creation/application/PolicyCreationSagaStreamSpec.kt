@@ -35,6 +35,7 @@ class PolicyCreationSagaStreamSpec {
 
     private val newPolicySaga = InsuranceCreationSagaEventStream(
             BOOTSTRAP_SERVERS,
+            PROPOSAL_EVENTS_TOPIC,
             PREMIUM_EVENTS_TOPIC,
             POLICY_EVENTS_TOPIC,
             INSURANCE_CREATION_SAGA_TOPIC
