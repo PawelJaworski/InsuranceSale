@@ -34,7 +34,6 @@ class UniqueEventVersionProcessor(
             store.put(key, event)
             eventListener.onFirst(event, eventBus)
         }
-        store.all().forEachRemaining { println(" papapapa $it") }
     }
 
     override fun close(){}

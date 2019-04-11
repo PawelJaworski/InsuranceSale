@@ -4,18 +4,17 @@ import pl.javorex.event.util.EventEnvelope
 import pl.javorex.event.util.SagaEventBus
 import pl.javorex.event.util.SagaEventListener
 import pl.javorex.event.util.SagaEvents
-import pl.javorex.insurance.creation.domain.event.CreateInsuranceFromProposal
-import pl.javorex.insurance.creation.domain.event.InsuranceCreationSagaCompleted
+import pl.javorex.insurance.creation.domain.event.CreateInsurance
+import pl.javorex.insurance.creation.domain.event.InsuranceCreated
 import pl.javorex.insurance.creation.domain.event.InsuranceCreationSagaCorrupted
 import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
 import pl.javorex.insurance.premium.domain.event.PremiumCalculationFailedEvent
-import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 
 internal object InsuranceCreationSagaEventListener : SagaEventListener {
     override fun onComplete(aggregateId: String, aggregateVersion: Long, events: SagaEvents, eventBus: SagaEventBus) {
 
-        val event = InsuranceCreationSagaCompleted(
-                events.get(CreateInsuranceFromProposal::class.java),
+        val event = InsuranceCreated(
+                events.get(CreateInsurance::class.java),
                 events.get(PremiumCalculatedEvent::class.java)
         )
 

@@ -1,5 +1,6 @@
 package pl.javorex.insurance.premium.application
 
+import pl.javorex.insurance.creation.domain.event.CreateInsurance
 import pl.javorex.insurance.premium.domain.DefaultPremiumAmount
 import pl.javorex.insurance.premium.domain.NumberOfPremium
 import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
@@ -8,14 +9,13 @@ import pl.javorex.insurance.premium.domain.event.PremiumEvent
 import pl.javorex.util.function.Failure
 import pl.javorex.util.function.Success
 import pl.javorex.util.function.Try
-import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 
 class ProposalAcceptedListener (
         private val premiumEventBus: PremiumEventBus
 ) {
-    fun onProposalAccepted(proposalAccepted: ProposalAcceptedEvent, proposalVersion: Long) {
+    fun onProposalAccepted(createInsurance: CreateInsurance, insuranceVersion: Long) {
         val calculationTry = Try {
-            val numberOfPremium = NumberOfPremium(proposalAccepted.numberOfPremiums)
+            val numberOfPremium = NumberOfPremium(createInsurance.numberOfPremiums)
             DefaultPremiumAmount.applyTo(numberOfPremium)
         }
 
@@ -23,6 +23,6 @@ class ProposalAcceptedListener (
             is Success -> PremiumCalculatedEvent(calculationTry.success.value)
             is Failure -> PremiumCalculationFailedEvent(calculationTry.error)
         }
-        premiumEventBus.emit(event, proposalAccepted.proposalId, proposalVersion)
+        premiumEventBus.emit(event, createInsurance.insuranceId, insuranceVersion)
     }
 }

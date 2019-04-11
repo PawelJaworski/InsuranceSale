@@ -6,8 +6,8 @@ import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.Topology
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import pl.javorex.insurance.creation.domain.event.CreateInsurance
 import pl.javorex.insurance.premium.application.ProposalAcceptedListener
-import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 import pl.javorex.kafka.streams.event.newEventStream
 import java.util.*
 import javax.annotation.PostConstruct
@@ -15,7 +15,7 @@ import javax.annotation.PostConstruct
 @Service
 class ProposalAcceptedEventStreamListener(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
-        @Value("\${kafka.topic.proposal-events}") private val proposalEventsTopic: String,
+        @Value("\${kafka.topic.insurance-creation-events}") private val insuranceCreationTopic: String,
         val proposalAcceptedListener: ProposalAcceptedListener
 ) {
     private val props= Properties()
@@ -28,7 +28,7 @@ class ProposalAcceptedEventStreamListener(
 
     @PostConstruct
     fun init() {
-        val topology = createTopology(props)
+        val topology = createTopology()
         streams = KafkaStreams(topology, props)
         //streams.cleanUp()
         streams.start()
@@ -39,14 +39,14 @@ class ProposalAcceptedEventStreamListener(
                 )
     }
 
-    fun createTopology(props: Properties): Topology {
+    fun createTopology(): Topology {
         val streamBuilder = StreamsBuilder()
 
-        streamBuilder.newEventStream(proposalEventsTopic)
-                .filter{ _, eventEnvelope -> eventEnvelope.isTypeOf(ProposalAcceptedEvent::class.java)}
+        streamBuilder.newEventStream(insuranceCreationTopic)
+                .filter{ _, eventEnvelope -> eventEnvelope.isTypeOf(CreateInsurance::class.java)}
                 .foreach{ _, eventEnvelope ->
-                    val proposalEvent = eventEnvelope.unpack(ProposalAcceptedEvent::class.java)
-                    proposalAcceptedListener.onProposalAccepted(proposalEvent, eventEnvelope.aggregateVersion)
+                    val createInsurance = eventEnvelope.unpack(CreateInsurance::class.java)
+                    proposalAcceptedListener.onProposalAccepted(createInsurance, eventEnvelope.aggregateVersion)
                 }
 
 

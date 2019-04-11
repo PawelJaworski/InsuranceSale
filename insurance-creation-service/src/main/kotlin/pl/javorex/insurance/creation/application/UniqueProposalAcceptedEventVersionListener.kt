@@ -1,9 +1,7 @@
 package pl.javorex.insurance.creation.application
 
 import pl.javorex.event.util.EventEnvelope
-import pl.javorex.event.util.pack
-import pl.javorex.event.util.repack
-import pl.javorex.insurance.creation.domain.event.CreateInsuranceFromProposal
+import pl.javorex.insurance.creation.domain.event.CreateInsurance
 import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 import pl.javorex.kafka.streams.event.EventUniquenessListener
 import pl.javorex.kafka.streams.event.ProcessorEventBus
@@ -19,7 +17,7 @@ object UniqueProposalAcceptedEventVersionListener : EventUniquenessListener {
        }
 
         val proposalAcceptedEvent = event.unpack(ProposalAcceptedEvent::class.java)
-        val createInsuranceFromProposalEvent = CreateInsuranceFromProposal(
+        val createInsuranceFromProposalEvent = CreateInsurance(
                 proposalAcceptedEvent.proposalId,
                 proposalAcceptedEvent.insuranceProduct,
                 proposalAcceptedEvent.numberOfPremiums)

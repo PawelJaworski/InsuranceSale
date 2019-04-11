@@ -28,6 +28,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>pl.javorex.insurance.creation</groupId>
+			<artifactId>insurance-creation-events</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
 			<groupId>pl.javorex.insurance.proposal</groupId>
 			<artifactId>proposal-events</artifactId>
 			<version>0.0.1-SNAPSHOT</version>

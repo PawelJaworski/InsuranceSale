@@ -15,7 +15,7 @@ import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
 import pl.javorex.event.util.EventEnvelope
 import pl.javorex.event.util.pack
 import pl.javorex.insurance.creation.adapter.InsuranceCreationSagaEventStream
-import pl.javorex.insurance.creation.domain.event.InsuranceCreationSagaCompleted
+import pl.javorex.insurance.creation.domain.event.InsuranceCreated
 import pl.javorex.insurance.creation.domain.event.InsuranceCreationSagaCorrupted
 import pl.javorex.kafka.streams.event.EventEnvelopeSerde
 import java.math.BigDecimal
@@ -74,10 +74,10 @@ class PolicyCreationSagaStreamSpec {
             at = 10
         }
 
-        val firstRead: InsuranceCreationSagaCompleted? = read(
+        val firstRead: InsuranceCreated? = read(
                 POLICY_EVENTS_TOPIC
         )
-        val secondRead: InsuranceCreationSagaCompleted? = read(
+        val secondRead: InsuranceCreated? = read(
                 POLICY_EVENTS_TOPIC
         )
         assertNotNull(firstRead)
@@ -101,7 +101,7 @@ class PolicyCreationSagaStreamSpec {
             at = 26
         }
 
-        val completedSaga: InsuranceCreationSagaCompleted? = read(
+        val completedSaga: InsuranceCreated? = read(
                 POLICY_EVENTS_TOPIC
         )
         val corruptedSaga: InsuranceCreationSagaCorrupted? = read(
