@@ -6,6 +6,7 @@ import pl.javorex.event.util.SagaEventListener
 import pl.javorex.event.util.SagaEvents
 import pl.javorex.insurance.creation.domain.event.CreateInsurance
 import pl.javorex.insurance.creation.domain.event.InsuranceCreated
+import pl.javorex.insurance.creation.domain.event.InsuranceCreationRollback
 import pl.javorex.insurance.creation.domain.event.InsuranceCreationSagaCorrupted
 import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
 import pl.javorex.insurance.premium.domain.event.PremiumCalculationFailedEvent
@@ -32,6 +33,7 @@ internal object InsuranceCreationSagaEventListener : SagaEventListener {
             }
         }
 
+        eventBus.emitError(error.aggregateId, error.aggregateVersion, InsuranceCreationRollback())
         eventBus.emitError(error.aggregateId, error.aggregateVersion, event)
     }
 
@@ -39,6 +41,7 @@ internal object InsuranceCreationSagaEventListener : SagaEventListener {
         val missingEvents = events.missing().joinToString(",")
         val event = "Request Timeout. Missing $missingEvents"
 
+        eventBus.emitError(aggregateId, aggregateVersion, InsuranceCreationRollback())
         eventBus.emitError(aggregateId, aggregateVersion, event)
     }
 }
