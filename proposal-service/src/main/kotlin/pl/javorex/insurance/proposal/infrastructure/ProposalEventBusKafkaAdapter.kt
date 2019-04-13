@@ -5,7 +5,7 @@ import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerConfig.*
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.javorex.insurance.proposal.application.ProposalEventBus
-import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
+import pl.javorex.insurance.proposal.event.ProposalAccepted
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -23,7 +23,7 @@ class ProposalEventBusKafkaAdapter(
 ) : ProposalEventBus {
     private val producer = ProducerFactory.createProducer(bootstrapServers)
 
-    override fun emit(proposalAccepted: ProposalAcceptedEvent, version: Long) {
+    override fun emit(proposalAccepted: ProposalAccepted, version: Long) {
         val timestamp = Instant.now().toEpochMilli()
         val key = proposalAccepted.proposalId
         val value = pack(proposalAccepted.proposalId, version, proposalAccepted)

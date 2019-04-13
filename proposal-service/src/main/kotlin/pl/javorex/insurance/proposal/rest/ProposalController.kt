@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import pl.javorex.insurance.proposal.application.ProposalEventBus
-import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
+import pl.javorex.insurance.proposal.event.ProposalAccepted
 import pl.javorex.insurance.proposal.rest.command.AcceptProposalCommand
 
 @RestController
@@ -13,7 +13,7 @@ class ProposalController(
 ) {
     @PostMapping(path = ["/proposal/accept"])
     fun acceptProposal(@RequestBody command: AcceptProposalCommand): ResponseEntity<Any> {
-        val event = ProposalAcceptedEvent(
+        val event = ProposalAccepted(
                 command.proposalId,
                 command.insuranceProduct,
                 command.numberOfPremiums

@@ -6,7 +6,7 @@ import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.Topology
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import pl.javorex.insurance.creation.domain.event.CreateInsurance
+import pl.javorex.insurance.creation.domain.event.InsuranceCreationStarted
 import pl.javorex.insurance.premium.application.ProposalAcceptedListener
 import pl.javorex.kafka.streams.event.newEventStream
 import java.util.*
@@ -43,9 +43,9 @@ class ProposalAcceptedEventStreamListener(
         val streamBuilder = StreamsBuilder()
 
         streamBuilder.newEventStream(insuranceCreationTopic)
-                .filter{ _, eventEnvelope -> eventEnvelope.isTypeOf(CreateInsurance::class.java)}
+                .filter{ _, eventEnvelope -> eventEnvelope.isTypeOf(InsuranceCreationStarted::class.java)}
                 .foreach{ _, eventEnvelope ->
-                    val createInsurance = eventEnvelope.unpack(CreateInsurance::class.java)
+                    val createInsurance = eventEnvelope.unpack(InsuranceCreationStarted::class.java)
                     proposalAcceptedListener.onProposalAccepted(createInsurance, eventEnvelope.aggregateVersion)
                 }
 

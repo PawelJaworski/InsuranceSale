@@ -5,13 +5,12 @@ import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.Topology
-import org.springframework.beans.factory.annotation.Value
 import pl.javorex.event.util.EventEnvelope
 import pl.javorex.event.util.repack
 import pl.javorex.event.util.unambiguousVersionKeyOf
 import pl.javorex.insurance.creation.domain.event.InsuranceCreationRollback
 import pl.javorex.insurance.premium.application.ProposalAcceptedListener
-import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
+import pl.javorex.insurance.premium.domain.event.PremiumCalculationCompleted
 import pl.javorex.insurance.premium.domain.event.PremiumCalculationRollback
 import pl.javorex.kafka.streams.event.EventEnvelopeSerde
 import pl.javorex.kafka.streams.event.newEventStream
@@ -56,7 +55,7 @@ class RollbackKStream(
                 .groupBy({ _, event -> unambiguousVersionKeyOf(event)})
                 .reduce{ _, newValue -> newValue }
         val premiums = streamBuilder.newEventStream(premiumTopic)
-                .filter{ _, v -> v.isTypeOf(PremiumCalculatedEvent::class.java)}
+                .filter{ _, v -> v.isTypeOf(PremiumCalculationCompleted::class.java)}
                 .groupBy{ _, event -> unambiguousVersionKeyOf(event)}
                 .reduce{ _, newValue -> newValue }
         premiums.join(

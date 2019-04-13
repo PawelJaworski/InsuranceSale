@@ -10,8 +10,8 @@ import org.apache.kafka.streams.test.ConsumerRecordFactory
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import pl.javorex.insurance.premium.domain.event.PremiumCalculatedEvent
-import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
+import pl.javorex.insurance.premium.domain.event.PremiumCalculationCompleted
+import pl.javorex.insurance.proposal.event.ProposalAccepted
 import pl.javorex.event.util.EventEnvelope
 import pl.javorex.event.util.pack
 import pl.javorex.insurance.creation.adapter.InsuranceCreationSagaEventStream
@@ -63,14 +63,14 @@ class PolicyCreationSagaStreamSpec {
         topologyTestDriver.pipe{
             aggregateRootId = PROPOSAL_ID
             topic = PROPOSAL_EVENTS_TOPIC
-            event = ProposalAcceptedEvent(PROPOSAL_ID, "OC", 3)
+            event = ProposalAccepted(PROPOSAL_ID, "OC", 3)
             at = 0
         }
 
         topologyTestDriver.pipe {
             aggregateRootId = PROPOSAL_ID
             topic = PREMIUM_EVENTS_TOPIC
-            event = PremiumCalculatedEvent(BigDecimal.valueOf(20))
+            event = PremiumCalculationCompleted(BigDecimal.valueOf(20))
             at = 10
         }
 
@@ -81,7 +81,7 @@ class PolicyCreationSagaStreamSpec {
                 POLICY_EVENTS_TOPIC
         )
         assertNotNull(firstRead)
-        assertEquals(firstRead!!.premiumCalculatedEvent.amount, BigDecimal("20.0"))
+        assertEquals(firstRead!!.premiumCalculationCompleted.amount, BigDecimal("20.0"))
         assertNull(secondRead)
     }
 
@@ -90,14 +90,14 @@ class PolicyCreationSagaStreamSpec {
         topologyTestDriver.pipe{
             aggregateRootId = PROPOSAL_ID
             topic = PROPOSAL_EVENTS_TOPIC
-            event = ProposalAcceptedEvent(PROPOSAL_ID, "OC", 3)
+            event = ProposalAccepted(PROPOSAL_ID, "OC", 3)
             at = 0
         }
 
         topologyTestDriver.pipe {
             aggregateRootId = PROPOSAL_ID
             topic = PREMIUM_EVENTS_TOPIC
-            event = PremiumCalculatedEvent(BigDecimal.valueOf(20))
+            event = PremiumCalculationCompleted(BigDecimal.valueOf(20))
             at = 26
         }
 

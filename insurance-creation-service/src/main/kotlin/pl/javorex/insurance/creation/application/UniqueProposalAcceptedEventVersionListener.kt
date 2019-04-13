@@ -1,8 +1,8 @@
 package pl.javorex.insurance.creation.application
 
 import pl.javorex.event.util.EventEnvelope
-import pl.javorex.insurance.creation.domain.event.CreateInsurance
-import pl.javorex.insurance.proposal.event.ProposalAcceptedEvent
+import pl.javorex.insurance.creation.domain.event.InsuranceCreationStarted
+import pl.javorex.insurance.proposal.event.ProposalAccepted
 import pl.javorex.kafka.streams.event.EventUniquenessListener
 import pl.javorex.kafka.streams.event.ProcessorEventBus
 
@@ -12,12 +12,12 @@ object UniqueProposalAcceptedEventVersionListener : EventUniquenessListener {
     }
 
     override fun onFirst(event: EventEnvelope, eventBus: ProcessorEventBus) {
-       check(event.isTypeOf(ProposalAcceptedEvent::class.java)) {
-           "Event should be type of ${ProposalAcceptedEvent::class.java} in $event"
+       check(event.isTypeOf(ProposalAccepted::class.java)) {
+           "Event should be type of ${ProposalAccepted::class.java} in $event"
        }
 
-        val proposalAcceptedEvent = event.unpack(ProposalAcceptedEvent::class.java)
-        val createInsuranceFromProposalEvent = CreateInsurance(
+        val proposalAcceptedEvent = event.unpack(ProposalAccepted::class.java)
+        val createInsuranceFromProposalEvent = InsuranceCreationStarted(
                 proposalAcceptedEvent.proposalId,
                 proposalAcceptedEvent.insuranceProduct,
                 proposalAcceptedEvent.numberOfPremiums)
