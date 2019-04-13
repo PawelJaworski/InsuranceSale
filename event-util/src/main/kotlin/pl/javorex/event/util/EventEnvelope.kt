@@ -8,12 +8,12 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
 
 data class EventEnvelope(
-        val aggregateId: String,
+        override val aggregateId: String,
+        override val aggregateVersion: Long,
         val timestamp: Long,
-        val aggregateVersion: Long,
         val eventType: String,
         val payload: JsonNode
-) {
+) : UnambiguousEventVersion {
     fun isTypeOf(clazz: Class<*>) = clazz.simpleName == eventType
     fun <T>unpack(clazz: Class<T>): T = newObjectMapper().treeToValue(payload, clazz)
     fun withTimestamp(timestamp: Long) = EventEnvelope(aggregateId, timestamp, aggregateVersion, eventType, payload)

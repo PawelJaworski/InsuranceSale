@@ -4,7 +4,6 @@ import org.apache.kafka.streams.processor.Processor
 import org.apache.kafka.streams.processor.ProcessorContext
 import org.apache.kafka.streams.state.KeyValueStore
 import pl.javorex.event.util.EventEnvelope
-import pl.javorex.event.util.EventSagaTemplate
 
 class UniqueEventVersionProcessor(
         private val storeName: String,
@@ -26,7 +25,7 @@ class UniqueEventVersionProcessor(
             return
         }
 
-        val key = uniqueKeyOf(event)
+        val key = event.getVersionKey()
         val previous = store.get(key)
         if (previous != null) {
             eventListener.onUniqueViolated(event, eventBus)
@@ -37,6 +36,4 @@ class UniqueEventVersionProcessor(
     }
 
     override fun close(){}
-
-    private fun uniqueKeyOf(event: EventEnvelope) = "unique-key-of-${event.aggregateId}-and-${event.aggregateVersion}"
 }
