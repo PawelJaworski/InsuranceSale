@@ -17,10 +17,10 @@ object UniqueProposalAcceptedEventVersionListener : EventUniquenessListener {
        }
 
         val proposalAcceptedEvent = event.unpack(ProposalAccepted::class.java)
-        val createInsuranceFromProposalEvent = InsuranceCreationStarted(
+        val insuranceCreationStarted = InsuranceCreationStarted(
                 proposalAcceptedEvent.proposalId,
                 proposalAcceptedEvent.insuranceProduct,
                 proposalAcceptedEvent.numberOfPremiums)
-        eventBus.emit(event.aggregateId, event.aggregateVersion, createInsuranceFromProposalEvent)
+        eventBus.emit(event.aggregateId, event.aggregateVersion, insuranceCreationStarted)
     }
 }
