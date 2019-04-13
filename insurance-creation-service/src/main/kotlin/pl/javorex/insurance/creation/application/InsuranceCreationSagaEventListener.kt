@@ -24,12 +24,10 @@ internal object InsuranceCreationSagaEventListener : SagaEventListener {
 
     override fun onError(error: EventEnvelope, eventBus: SagaEventBus) {
         val event = when {
-            error.isTypeOf(PremiumCalculationFailed::class.java) -> {
-                val premiumCalculationFailed = error.unpack(PremiumCalculationFailed::class.java)
-                InsuranceCreationSagaCorrupted(premiumCalculationFailed.error)
-            } else -> {
-                val errorMessage = error.payload.toString()
-                InsuranceCreationSagaCorrupted(errorMessage)
+            error.isTypeOf(PremiumCalculationFailed::class.java) ->
+                error.unpack(PremiumCalculationFailed::class.java).error
+            else -> {
+                error.payload.toString()
             }
         }
 

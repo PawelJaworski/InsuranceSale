@@ -35,8 +35,8 @@ class InsuranceCreationEventsReadingImpl(
     override fun forProposalId(proposalId: String) : Flux<String> = flux
             .autoConnect()
             .filter{ it.key() == proposalId }
-            .map { it.value() }
-            .map { it.payload.toString() }
+            .filter{ it.value().isTypeOf(String::class.java)}
+            .map { it.value().unpack(String::class.java) }
 
     private fun receiverOptions(topics: Collection<String>): ReceiverOptions<String, EventEnvelope> {
         return receiverOptions()
@@ -53,6 +53,7 @@ class InsuranceCreationEventsReadingImpl(
         props[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "latest"
         props[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         props[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = EventEnvelopeDeserializer::class.java
+
         return ReceiverOptions.create<String, EventEnvelope>(props)
     }
 }
