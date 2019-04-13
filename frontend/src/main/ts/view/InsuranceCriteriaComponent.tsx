@@ -1,5 +1,5 @@
 import * as React from "react";
-import ErrorMessages from "./ErrorMessages";
+import ErrorMessages, {ServiceMessages} from "./ErrorMessages";
 import * as POST from "../model/proposal/POST";
 import * as GET from "../model/proposal/GET";
 import {ReconnectableEventSource} from "../util/ReconnectableEventSource";
@@ -18,42 +18,6 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
             .then(versionId => this.versionId  = versionId)
     }
 
-    componentDidMount(): void {
-        const eventSource = new ReconnectableEventSource()
-        eventSource.onConnectionAlive = () => {
-            this.clearInsuranceCreationErrors()
-        }
-        eventSource.onMessage = (event: MessageEvent) => {
-            const message = event.data
-            this.displayInsuranceCreationError(message)
-        }
-        eventSource.onError = (error: MessageEvent) =>
-            this.displayInsuranceCreationError("Insurance-Creation-Service unavailable.")
-        eventSource.connect("/insurance/creation/error/" + PROPOSAL_ID)
-    }
-
-    private displayProposalError(error: string) {
-        this.state.proposalError = [error]
-        this.setState({proposalError: this.state.proposalError})
-    }
-
-    private displayInsuranceCreationError(error: string) {
-        this.state.insuranceCreationError = [error]
-        this.setState({insuranceCreationError: this.state.insuranceCreationError})
-    }
-
-    private clearProposalError() {
-        this.state.proposalError = []
-        this.setState({proposalError: this.state.proposalError  })
-    }
-
-
-    private clearInsuranceCreationErrors() {
-        this.state.insuranceCreationError = []
-        this.setState({insuranceCreationError: this.state.insuranceCreationError})
-    }
-
-
     private onSubmit = (event) => {
         POST.proposalAccepted(PROPOSAL_ID, this.versionId, "GREAT_PRODUCT", 1)
             .catch(reason => {
@@ -61,6 +25,17 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
                 this.displayProposalError("Proposal-Service " + reason + ".")
             })
     }
+
+    private clearProposalError() {
+        this.state.proposalError = []
+        this.setState({proposalError: this.state.proposalError  })
+    }
+
+    private displayProposalError(error: string) {
+        this.state.proposalError = [error]
+        this.setState({proposalError: this.state.proposalError})
+    }
+
     render() {
         return (
             <div className="container">
@@ -69,7 +44,9 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
                         <ErrorMessages messages = {this.state.proposalError}/>
                     </div>
                     <div className={rowCss}>
-                        <ErrorMessages messages = {this.state.insuranceCreationError}/>
+                        <ServiceMessages url={"/insurance/creation/error/" + PROPOSAL_ID}
+                                         serviceName="Insurance-Creation-Service"
+                                         className={errorCss}/>
                     </div>
                     <div className={rowCss}>
                         <h1 className="card-header">
@@ -86,3 +63,4 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
 }
 
 const rowCss = "col-md-6 offset-md-3 text-center"
+const errorCss = "alert alert-danger"
