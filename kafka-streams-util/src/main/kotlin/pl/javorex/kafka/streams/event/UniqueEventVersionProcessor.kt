@@ -39,5 +39,5 @@ class UniqueEventVersionProcessor(
 
     override fun close(){}
 
-    private fun uniqueKeyOf(event: EventEnvelope) = unambiguousVersionKeyOf(event)
+    private fun uniqueKeyOf(event: EventEnvelope) = unambiguousVersionKeyOf(event).asString()
 }

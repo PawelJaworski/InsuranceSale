@@ -52,11 +52,11 @@ internal class PremiumCalculationRollbackKStream(
 
         val insuranceErrors = streamBuilder.newEventStream(insuranceErrorTopic)
                 .filter{ _, event -> event.isTypeOf(InsuranceCreationRollback::class.java)}
-                .groupBy({ _, event -> unambiguousVersionKeyOf(event)})
+                .groupBy { _, event -> unambiguousVersionKeyOf(event).toString()}
                 .reduce{ _, newValue -> newValue }
         val premiums = streamBuilder.newEventStream(premiumTopic)
                 .filter{ _, v -> v.isTypeOf(PremiumCalculationCompleted::class.java)}
-                .groupBy{ _, event -> unambiguousVersionKeyOf(event)}
+                .groupBy { _, event -> unambiguousVersionKeyOf(event).asString()}
                 .reduce{ _, newValue -> newValue }
         premiums.join(
                 insuranceErrors
