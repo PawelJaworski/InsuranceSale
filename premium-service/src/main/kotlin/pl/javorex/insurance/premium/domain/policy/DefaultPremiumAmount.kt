@@ -1,5 +1,7 @@
-package pl.javorex.insurance.premium.domain
+package pl.javorex.insurance.premium.domain.policy
 
+import pl.javorex.insurance.premium.domain.vo.NumberOfPremium
+import pl.javorex.insurance.premium.domain.vo.PremiumAmount
 import java.math.BigDecimal
 import java.math.RoundingMode
 

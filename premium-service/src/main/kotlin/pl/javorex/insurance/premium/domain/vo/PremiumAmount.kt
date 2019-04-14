@@ -1,4 +1,4 @@
-package pl.javorex.insurance.premium.domain
+package pl.javorex.insurance.premium.domain.vo
 
 import java.math.BigDecimal
 

@@ -17,7 +17,7 @@ import pl.javorex.kafka.streams.event.newEventStream
 import java.util.*
 import javax.annotation.PostConstruct
 
-class RollbackKStream(
+internal class PremiumCalculationRollbackKStream(
         private val bootstrapServers: String,
         private val premiumTopic: String,
         private val insuranceErrorTopic: String,

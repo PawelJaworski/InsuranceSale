@@ -1,8 +1,8 @@
 package pl.javorex.insurance.premium.application
 
 import pl.javorex.insurance.creation.domain.event.InsuranceCreationStarted
-import pl.javorex.insurance.premium.domain.DefaultPremiumAmount
-import pl.javorex.insurance.premium.domain.NumberOfPremium
+import pl.javorex.insurance.premium.domain.policy.DefaultPremiumAmount
+import pl.javorex.insurance.premium.domain.vo.NumberOfPremium
 import pl.javorex.insurance.premium.domain.event.PremiumCalculationCompleted
 import pl.javorex.insurance.premium.domain.event.PremiumCalculationFailed
 import pl.javorex.insurance.premium.domain.event.PremiumEvent

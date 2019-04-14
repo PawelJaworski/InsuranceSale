@@ -1,4 +1,4 @@
-package pl.javorex.insurance.premium.infrastructure
+package pl.javorex.insurance.premium.adapter
 
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.Producer
@@ -6,7 +6,6 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringSerializer
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Service
 import pl.javorex.insurance.premium.application.PremiumEventBus
 import pl.javorex.insurance.premium.domain.event.PremiumEvent
 import pl.javorex.event.util.EventEnvelope
@@ -15,8 +14,8 @@ import pl.javorex.kafka.streams.event.EventEnvelopeSerde
 import java.util.*
 
 private val NO_PARTITION = null
-@Service
-class PremiumEventBusKafkaAdapter(
+
+internal class PremiumEventBusKafkaImpl(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
         @Value("\${kafka.topic.premium-events}") private val premiumEventsTopic: String
 ) : PremiumEventBus {

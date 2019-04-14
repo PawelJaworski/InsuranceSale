@@ -1,4 +1,4 @@
-package pl.javorex.insurance.premium.infrastructure
+package pl.javorex.insurance.premium.adapter
 
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StreamsBuilder
@@ -13,7 +13,7 @@ import java.util.*
 import javax.annotation.PostConstruct
 
 @Service
-class ProposalAcceptedEventStreamListener(
+class PremiumCalculationKStream(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
         @Value("\${kafka.topic.insurance-creation-events}") private val insuranceCreationTopic: String,
         val proposalAcceptedListener: ProposalAcceptedListener
