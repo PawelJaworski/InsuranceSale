@@ -16,7 +16,7 @@ data class EventEnvelope(
 ) : UnambiguousEventVersion {
     fun isTypeOf(clazz: Class<*>) = clazz.simpleName == eventType
     fun <T>unpack(clazz: Class<T>): T = newObjectMapper().treeToValue(payload, clazz)
-    fun withTimestamp(timestamp: Long) = EventEnvelope(aggregateId, timestamp, aggregateVersion, eventType, payload)
+    fun withTimestamp(timestamp: Long) = EventEnvelope(aggregateId, aggregateVersion, timestamp, eventType, payload)
 }
 
 fun repack(other: EventEnvelope, event: Any) =
@@ -26,7 +26,7 @@ fun pack(aggregateId: String, aggregateVersion: Long, event: Any): EventEnvelope
     val eventType = event::class.java.simpleName
     val payload = newObjectMapper().convertValue(event, JsonNode::class.java)
 
-    return EventEnvelope(aggregateId, System.currentTimeMillis(), aggregateVersion, eventType, payload)
+    return EventEnvelope(aggregateId, aggregateVersion, System.currentTimeMillis(), eventType, payload)
 }
 
 private fun newObjectMapper(): ObjectMapper = ObjectMapper()

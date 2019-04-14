@@ -13,7 +13,7 @@ internal object InsuranceCreationSagaTemplateFactory {
                     .withTimeout(ofSeconds(5))
                     .startsWith(InsuranceCreationStarted::class.java)
                     .requires(PremiumCalculationCompleted::class.java)
-                    .requires(InsuredRegistrationCompleted::class.java)
+                    //.requires(InsuredRegistrationCompleted::class.java)
                     .expectErrors(PremiumCalculationFailed::class.java)
                     .build()
 }
