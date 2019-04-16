@@ -12,8 +12,8 @@ import javax.annotation.PostConstruct
 import org.apache.kafka.streams.state.*
 import pl.javorex.event.util.*
 import pl.javorex.insurance.creation.application.InsuranceCreationSagaEventListener
-import pl.javorex.insurance.creation.application.InsuranceCreationSagaTemplateFactory
 import pl.javorex.insurance.creation.application.UniqueProposalAcceptedEventVersionListener
+import pl.javorex.insurance.creation.application.newSagaTemplate
 import pl.javorex.kafka.streams.event.*
 
 private const val PROPOSAL_EVENTS_SOURCE = "Proposal-Events-Source"
@@ -30,12 +30,13 @@ private const val INSURANCE_CREATION_SINK = "Insurance-Creation-Sink"
 private const val INSURANCE_CREATION_ERROR_SINK = "Insurance-Creation-Error-Sink"
 
 @Service
-class InsuranceCreationSagaEventStream(
+internal class InsuranceCreationSagaEventStream(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
         @Value("\${kafka.topic.proposal-events}") private val proposalEventsTopic: String,
         @Value("\${kafka.topic.premium-events}") private val premiumEventsTopic: String,
         @Value("\${kafka.topic.insurance-creation-events}") private val insuranceCreationEvents: String,
-        @Value("\${kafka.topic.insurance-creation-error-events}") private val insuranceCreationErrorTopic: String
+        @Value("\${kafka.topic.insurance-creation-error-events}") private val insuranceCreationErrorTopic: String,
+        private val insuranceCreationSagaEventListener: InsuranceCreationSagaEventListener
 ) {
     private val props= Properties()
     private lateinit var streams: KafkaStreams
@@ -113,10 +114,10 @@ class InsuranceCreationSagaEventStream(
     )
 
     private fun newInsuranceCreationSagaProcessor() = EventSagaProcessor(
-            { InsuranceCreationSagaTemplateFactory.newSagaTemplate() },
+            { newSagaTemplate() },
             HeartBeatInterval.ofSeconds(2),
             INSURANCE_CREATION_STORE,
-            InsuranceCreationSagaEventListener,
+            insuranceCreationSagaEventListener,
             INSURANCE_CREATION_SINK,
             INSURANCE_CREATION_ERROR_SINK
     )

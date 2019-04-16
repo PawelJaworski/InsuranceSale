@@ -6,23 +6,27 @@ import pl.javorex.insurance.creation.domain.event.InsuranceCreationStarted
 import pl.javorex.insurance.proposal.event.ProposalAccepted
 import pl.javorex.kafka.streams.event.EventUniquenessListener
 import pl.javorex.kafka.streams.event.ProcessorEventBus
+import kotlin.random.Random
 
 object UniqueProposalAcceptedEventVersionListener : EventUniquenessListener {
     override fun onUniqueViolated(error: EventEnvelope, eventBus: ProcessorEventBus) {
         eventBus.emitError(error.aggregateId, error.aggregateVersion, "Proposal version outdated.")
     }
 
-    override fun onFirst(event: EventEnvelope, eventBus: ProcessorEventBus) {
-       check(event.isTypeOf(ProposalAccepted::class.java)) {
-           "Event should be type of ${ProposalAccepted::class.java} in $event"
+    override fun onFirst(proposalAcceptedEvent: EventEnvelope, eventBus: ProcessorEventBus) {
+       check(proposalAcceptedEvent.isTypeOf(ProposalAccepted::class.java)) {
+           "Event should be type of ${ProposalAccepted::class.java} in $proposalAcceptedEvent"
        }
 
-        val proposalAcceptedEvent = event.unpack(ProposalAccepted::class.java)
+        val proposalAccepted = proposalAcceptedEvent.unpack(ProposalAccepted::class.java)
+        val insuranceId = generateInsuranceId()
         val insuranceCreationStarted = InsuranceCreationStarted(
-                unambiguousVersionKeyOf(event),
-                proposalAcceptedEvent.proposalId,
-                proposalAcceptedEvent.insuranceProduct,
-                proposalAcceptedEvent.numberOfPremiums)
-        eventBus.emit(event.aggregateId, event.aggregateVersion, insuranceCreationStarted)
+                unambiguousVersionKeyOf(proposalAcceptedEvent),
+                insuranceId,
+                proposalAccepted.insuranceProduct,
+                proposalAccepted.numberOfPremiums)
+        eventBus.emit(insuranceId, 1, insuranceCreationStarted)
     }
+
+    private fun generateInsuranceId() = "insurance-${Random(System.currentTimeMillis()).nextInt(1, Int.MAX_VALUE)}"
 }

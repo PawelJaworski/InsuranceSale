@@ -1,25 +1,25 @@
 package pl.javorex.insurance.creation.application
 
+import org.springframework.stereotype.Service
 import pl.javorex.event.util.EventEnvelope
 import pl.javorex.event.util.SagaEventBus
 import pl.javorex.event.util.SagaEventListener
 import pl.javorex.event.util.SagaEvents
-import pl.javorex.insurance.creation.domain.event.InsuranceCreationStarted
-import pl.javorex.insurance.creation.domain.event.InsuranceCreated
-import pl.javorex.insurance.creation.domain.event.InsuranceCreationRollback
-import pl.javorex.insurance.creation.domain.event.InsuranceCreationSagaCorrupted
+import pl.javorex.insurance.creation.domain.event.*
 import pl.javorex.insurance.premium.domain.event.PremiumCalculationCompleted
 import pl.javorex.insurance.premium.domain.event.PremiumCalculationFailed
 
-internal object InsuranceCreationSagaEventListener : SagaEventListener {
+internal class InsuranceCreationSagaEventListener(
+        private val insuranceFactory: InsuranceFactory
+) : SagaEventListener {
     override fun onComplete(aggregateId: String, aggregateVersion: Long, events: SagaEvents, eventBus: SagaEventBus) {
 
-        val event = InsuranceCreated(
+        val insuranceCreated = insuranceFactory.createInsurance(
                 events.get(InsuranceCreationStarted::class.java),
                 events.get(PremiumCalculationCompleted::class.java)
         )
 
-        eventBus.emit(aggregateId, aggregateVersion, event)
+        eventBus.emit(aggregateId, aggregateVersion, insuranceCreated)
     }
 
     override fun onError(error: EventEnvelope, eventBus: SagaEventBus) {
