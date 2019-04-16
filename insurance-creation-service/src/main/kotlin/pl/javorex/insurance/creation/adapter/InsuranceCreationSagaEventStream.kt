@@ -11,23 +11,11 @@ import java.util.*
 import javax.annotation.PostConstruct
 import org.apache.kafka.streams.state.*
 import pl.javorex.event.util.*
+import pl.javorex.insurance.creation.adapter.kafka.*
 import pl.javorex.insurance.creation.application.InsuranceCreationSagaEventListener
 import pl.javorex.insurance.creation.application.UniqueProposalAcceptedEventVersionListener
 import pl.javorex.insurance.creation.application.newSagaTemplate
 import pl.javorex.kafka.streams.event.*
-
-private const val PROPOSAL_EVENTS_SOURCE = "Proposal-Events-Source"
-private const val INSURANCE_EVENTS_SOURCE = "Insurance-Events-Source"
-private const val PREMIUM_EVENTS_SOURCE = "Premium-Events-Source"
-
-private const val PROPOSAL_ACCEPTED_UNIQUE_EVENT_PROCESSOR = "Proposal-Accepted-Unique-Event-Processor"
-private const val INSURANCE_CREATION_SAGA_PROCESSOR = "Insurance-Creation-Saga-Processor"
-
-private const val UNIQUE_PROPOSAL_ACCEPTED_STORE = "Unique-Proposal-Accepted-Store"
-private const val INSURANCE_CREATION_STORE = "Insurance-Creation-Saga-Store"
-
-private const val INSURANCE_CREATION_SINK = "Insurance-Creation-Sink"
-private const val INSURANCE_CREATION_ERROR_SINK = "Insurance-Creation-Error-Sink"
 
 @Service
 internal class InsuranceCreationSagaEventStream(
