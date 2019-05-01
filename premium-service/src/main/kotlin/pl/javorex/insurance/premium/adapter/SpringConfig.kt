@@ -10,7 +10,7 @@ import pl.javorex.insurance.premium.application.ProposalAcceptedListener
 internal class SpringConfig(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
         @Value("\${kafka.topic.premium-events}") private val premiumTopic: String,
-        @Value("\${kafka.topic.insurance-creation-error-events}") private val insuranceErrorTopic: String
+        @Value("\${kafka.topic.insurance-error-events}") private val insuranceErrorTopic: String
 ) {
     @Bean
     fun rollbackStreamListener() : PremiumCalculationRollbackKStream {

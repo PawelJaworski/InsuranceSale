@@ -15,7 +15,7 @@ private const val PROPOSAL_EVENTS_TOPIC = "proposal-events-test"
 private const val PREMIUM_EVENTS_TOPIC = "premium-events-test"
 private const val POLICY_EVENTS_TOPIC = "policy-events-test"
 private const val INSURANCE_CREATION_SAGA_TOPIC = "policy-saga-test"
-private const val INSURANCE_CREATION_ERROR_TOPIC = "insurance-creation-error-test"
+private const val INSURANCE_CREATION_ERROR_TOPIC = "insurance-error-test"
 
 class PolicyCreationSagaStreamSpec {
     private lateinit var topologyTestDriver: TopologyTestDriver

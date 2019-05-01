@@ -18,7 +18,7 @@ internal const val UNIQUE_PROPOSAL_ACCEPTED_STORE = "Unique-Proposal-Accepted-St
 internal const val INSURANCE_CREATION_STORE = "Insurance-Creation-Saga-Store"
 
 internal const val INSURANCE_CREATION_SINK = "Insurance-Creation-Sink"
-internal const val INSURANCE_CREATION_ERROR_SINK = "Insurance-Creation-Error-Sink"
+internal const val INSURANCE_CREATION_ERROR_SINK = "insurance-error-Sink"
 
 private val insuranceStoreSupplier: KeyValueBytesStoreSupplier = Stores
         .persistentKeyValueStore(INSURANCE_CREATION_STORE)

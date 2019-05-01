@@ -12,8 +12,8 @@ internal class SpringContextConfig(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
         @Value("\${kafka.topic.proposal-events}") private val proposalTopic: String,
         @Value("\${kafka.topic.premium-events}") private val premiumTopic: String,
-        @Value("\${kafka.topic.insurance-creation-events}") private val insuranceTopic: String,
-        @Value("\${kafka.topic.insurance-creation-error-events}") private val insuranceErrorTopic: String
+        @Value("\${kafka.topic.insurance-events}") private val insuranceTopic: String,
+        @Value("\${kafka.topic.insurance-error-events}") private val insuranceErrorTopic: String
 ) {
     @Bean
     fun insuranceCreationKStream() =

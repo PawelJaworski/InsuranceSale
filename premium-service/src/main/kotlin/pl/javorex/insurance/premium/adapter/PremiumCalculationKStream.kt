@@ -15,7 +15,7 @@ import javax.annotation.PostConstruct
 @Service
 class PremiumCalculationKStream(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
-        @Value("\${kafka.topic.insurance-creation-events}") private val insuranceCreationTopic: String,
+        @Value("\${kafka.topic.insurance-events}") private val insuranceCreationTopic: String,
         val proposalAcceptedListener: ProposalAcceptedListener
 ) {
     private val props= Properties()

@@ -17,7 +17,7 @@ import java.util.HashMap
 @Service
 class InsuranceCreationEventPublisherImpl(
         @Value("\${kafka.bootstrap-servers}") val bootstrapServers: String,
-        @Value("\${kafka.topic.insurance-creation-error-events}") val insuranceErrorTopic: String
+        @Value("\${kafka.topic.insurance-error-events}") val insuranceErrorTopic: String
 ) : InsuranceCreationEventPublisher {
     private val flux: ConnectableFlux<ReceiverRecord<String, EventEnvelope>> = KafkaReceiver
             .create<String, EventEnvelope>(
