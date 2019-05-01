@@ -2,6 +2,6 @@ package pl.javorex.insurance.creation.application.read
 
 import org.reactivestreams.Publisher
 
-interface InsuranceCreationEventsReading {
+interface InsuranceCreationEventPublisher {
     fun forProposalId(proposalId: String) : Publisher<String>
 }

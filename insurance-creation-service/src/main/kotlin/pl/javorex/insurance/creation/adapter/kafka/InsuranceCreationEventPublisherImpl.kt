@@ -1,16 +1,12 @@
-package pl.javorex.insurance.creation.adapter
+package pl.javorex.insurance.creation.adapter.kafka
 
-import com.fasterxml.jackson.databind.node.ObjectNode
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
-import org.apache.kafka.connect.json.JsonDeserializer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import pl.javorex.event.util.EventEnvelope
-import pl.javorex.insurance.creation.application.read.InsuranceCreationEventsReading
+import pl.javorex.insurance.creation.application.read.InsuranceCreationEventPublisher
 import pl.javorex.kafka.streams.event.EventEnvelopeDeserializer
-import pl.javorex.kafka.streams.event.EventEnvelopeSerde
-import pl.javorex.util.kafka.common.serialization.JsonPOJODeserializer
 import reactor.core.publisher.ConnectableFlux
 import reactor.core.publisher.Flux
 import reactor.kafka.receiver.KafkaReceiver
@@ -19,15 +15,13 @@ import reactor.kafka.receiver.ReceiverRecord
 import java.util.HashMap
 
 @Service
-class InsuranceCreationEventsReadingImpl(
-        @Value("\${kafka.topic.insurance-creation-error-events}") val topic: String,
+class InsuranceCreationEventPublisherImpl(
         @Value("\${kafka.bootstrap-servers}") val bootstrapServers: String,
-        @Value("\${kafka.consumer.groupId.policyEventsRead}}") val groupId: String,
-        @Value("\${kafka.consumer.clientId.policyEventsRead}") val clientId: String
-) : InsuranceCreationEventsReading {
+        @Value("\${kafka.topic.insurance-creation-error-events}") val insuranceErrorTopic: String
+) : InsuranceCreationEventPublisher {
     private val flux: ConnectableFlux<ReceiverRecord<String, EventEnvelope>> = KafkaReceiver
             .create<String, EventEnvelope>(
-                    receiverOptions(listOf(topic))
+                    subscriptionOf(listOf(insuranceErrorTopic))
             )
             .receive()
             .replay(0)
@@ -38,18 +32,16 @@ class InsuranceCreationEventsReadingImpl(
             .filter{ it.value().isTypeOf(String::class.java)}
             .map { it.value().unpack(String::class.java) }
 
-    private fun receiverOptions(topics: Collection<String>): ReceiverOptions<String, EventEnvelope> {
-        return receiverOptions()
-                .addAssignListener { println("Group $groupId partitions assigned $it") }
-                .addRevokeListener { println("Group $groupId partitions revoked $it") }
+    private fun subscriptionOf(topics: Collection<String>): ReceiverOptions<String, EventEnvelope> {
+        return subscriptionOf()
                 .subscription(topics)
     }
 
-    private fun receiverOptions(): ReceiverOptions<String, EventEnvelope> {
+    private fun subscriptionOf(): ReceiverOptions<String, EventEnvelope> {
         val props = HashMap<String, Any>()
         props[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServers
-        props[ConsumerConfig.GROUP_ID_CONFIG] = groupId
-        props[ConsumerConfig.CLIENT_ID_CONFIG] = clientId
+        props[ConsumerConfig.GROUP_ID_CONFIG] = "policy-events-read-groupId"
+        props[ConsumerConfig.CLIENT_ID_CONFIG] = "policy-events-read-clientId"
         props[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "latest"
         props[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java
         props[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = EventEnvelopeDeserializer::class.java

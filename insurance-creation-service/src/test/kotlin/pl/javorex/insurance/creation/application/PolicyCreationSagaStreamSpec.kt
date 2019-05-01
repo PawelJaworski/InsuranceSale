@@ -1,26 +1,13 @@
 package pl.javorex.insurance.creation.application
 
-import junit.framework.Assert.*
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
-import org.apache.kafka.streams.StreamsConfig
 import org.apache.kafka.streams.TopologyTestDriver
 import org.apache.kafka.streams.test.ConsumerRecordFactory
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import pl.javorex.insurance.premium.domain.event.PremiumCalculationCompleted
-import pl.javorex.insurance.proposal.event.ProposalAccepted
 import pl.javorex.event.util.EventEnvelope
 import pl.javorex.event.util.pack
-import pl.javorex.insurance.creation.adapter.InsuranceCreationSagaEventStream
-import pl.javorex.insurance.creation.domain.event.InsuranceCreated
-import pl.javorex.insurance.creation.domain.event.InsuranceCreationSagaCorrupted
 import pl.javorex.kafka.streams.event.EventEnvelopeSerde
-import java.math.BigDecimal
 import java.time.Duration
-import java.util.*
 
 private const val PROPOSAL_ID = "proposal-1"
 private const val BOOTSTRAP_SERVERS = "localhost:0000"
@@ -33,7 +20,7 @@ private const val INSURANCE_CREATION_ERROR_TOPIC = "insurance-creation-error-tes
 class PolicyCreationSagaStreamSpec {
     private lateinit var topologyTestDriver: TopologyTestDriver
 
-//    private val newPolicySaga = InsuranceCreationSagaEventStream(
+//    private val newPolicySaga = InsuranceCreationKStream(
 //            BOOTSTRAP_SERVERS,
 //            PROPOSAL_EVENTS_TOPIC,
 //            PREMIUM_EVENTS_TOPIC,
@@ -63,14 +50,14 @@ class PolicyCreationSagaStreamSpec {
 //    fun whenAllEventsAndNoTimeoutThenSagaCompleted() {
 //        topologyTestDriver.pipe{
 //            aggregateRootId = PROPOSAL_ID
-//            topic = PROPOSAL_EVENTS_TOPIC
+//            insuranceErrorTopic = PROPOSAL_EVENTS_TOPIC
 //            event = ProposalAccepted(PROPOSAL_ID, "OC", 3)
 //            at = 0
 //        }
 //
 //        topologyTestDriver.pipe {
 //            aggregateRootId = PROPOSAL_ID
-//            topic = PREMIUM_EVENTS_TOPIC
+//            insuranceErrorTopic = PREMIUM_EVENTS_TOPIC
 //            event = PremiumCalculationCompleted(BigDecimal.valueOf(20))
 //            at = 10
 //        }
@@ -90,14 +77,14 @@ class PolicyCreationSagaStreamSpec {
 //    fun whenAllEventsAndTimeoutThenSagaCorrupted() {
 //        topologyTestDriver.pipe{
 //            aggregateRootId = PROPOSAL_ID
-//            topic = PROPOSAL_EVENTS_TOPIC
+//            insuranceErrorTopic = PROPOSAL_EVENTS_TOPIC
 //            event = ProposalAccepted(PROPOSAL_ID, "OC", 3)
 //            at = 0
 //        }
 //
 //        topologyTestDriver.pipe {
 //            aggregateRootId = PROPOSAL_ID
-//            topic = PREMIUM_EVENTS_TOPIC
+//            insuranceErrorTopic = PREMIUM_EVENTS_TOPIC
 //            event = PremiumCalculationCompleted(BigDecimal.valueOf(20))
 //            at = 26
 //        }

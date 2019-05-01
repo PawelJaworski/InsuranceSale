@@ -1,29 +1,21 @@
-package pl.javorex.insurance.creation.adapter
+package pl.javorex.insurance.creation.adapter.kafka
 
 import org.apache.kafka.common.serialization.*
 import org.apache.kafka.streams.*
 import org.apache.kafka.streams.processor.*
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Service
-import pl.javorex.util.kafka.common.serialization.JsonPojoSerde
 import java.lang.Exception
 import java.util.*
-import javax.annotation.PostConstruct
-import org.apache.kafka.streams.state.*
-import pl.javorex.event.util.*
-import pl.javorex.insurance.creation.adapter.kafka.*
 import pl.javorex.insurance.creation.application.InsuranceCreationSagaEventListener
 import pl.javorex.insurance.creation.application.UniqueProposalAcceptedEventVersionListener
 import pl.javorex.insurance.creation.application.newSagaTemplate
 import pl.javorex.kafka.streams.event.*
 
-@Service
-internal class InsuranceCreationSagaEventStream(
-        @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
-        @Value("\${kafka.topic.proposal-events}") private val proposalEventsTopic: String,
-        @Value("\${kafka.topic.premium-events}") private val premiumEventsTopic: String,
-        @Value("\${kafka.topic.insurance-creation-events}") private val insuranceCreationEvents: String,
-        @Value("\${kafka.topic.insurance-creation-error-events}") private val insuranceCreationErrorTopic: String,
+internal class InsuranceCreationKStream(
+        private val bootstrapServers: String,
+        private val proposalEventsTopic: String,
+        private val premiumEventsTopic: String,
+        private val insuranceCreationEvents: String,
+        private val insuranceCreationErrorTopic: String,
         private val insuranceCreationSagaEventListener: InsuranceCreationSagaEventListener
 ) {
     private val props= Properties()
@@ -35,10 +27,11 @@ internal class InsuranceCreationSagaEventStream(
         props[StreamsConfig.COMMIT_INTERVAL_MS_CONFIG] = "2000"
         props[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.StringSerde::class.java
         props[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = EventEnvelopeSerde::class.java
+
+        init()
     }
 
-    @PostConstruct
-    fun init() {
+    private fun init() {
         val topology = createTopology(props)
         streams = KafkaStreams(topology, props)
         try {
@@ -53,15 +46,7 @@ internal class InsuranceCreationSagaEventStream(
                 )
     }
 
-    fun createTopology(props: Properties): Topology {
-        val storeSupplier: KeyValueBytesStoreSupplier = Stores
-                .persistentKeyValueStore(INSURANCE_CREATION_STORE)
-        val storeBuilder = Stores
-                .keyValueStoreBuilder(storeSupplier, Serdes.String(), JsonPojoSerde(EventSagaTemplate::class.java))
-        val proposalAcceptedUniqueEventStoreSupplier: KeyValueBytesStoreSupplier = Stores
-                .persistentKeyValueStore(UNIQUE_PROPOSAL_ACCEPTED_STORE)
-        val proposalAcceptedUniqueEventStoreBuilder = Stores
-                .keyValueStoreBuilder(proposalAcceptedUniqueEventStoreSupplier, Serdes.String(), EventEnvelopeSerde())
+    private fun createTopology(props: Properties): Topology {
 
         return StreamsBuilder().build()
                 .addSource(PROPOSAL_EVENTS_SOURCE, proposalEventsTopic)
@@ -78,7 +63,7 @@ internal class InsuranceCreationSagaEventStream(
                         INSURANCE_EVENTS_SOURCE,
                         PREMIUM_EVENTS_SOURCE
                 )
-                .addStateStore(storeBuilder, INSURANCE_CREATION_SAGA_PROCESSOR)
+                .addStateStore(insuranceStoreBuilder, INSURANCE_CREATION_SAGA_PROCESSOR)
                 .addStateStore(proposalAcceptedUniqueEventStoreBuilder, PROPOSAL_ACCEPTED_UNIQUE_EVENT_PROCESSOR)
                 .addSink(
                         INSURANCE_CREATION_SINK,
