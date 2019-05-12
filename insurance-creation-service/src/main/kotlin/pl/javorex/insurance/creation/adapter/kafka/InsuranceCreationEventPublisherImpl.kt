@@ -2,8 +2,6 @@ package pl.javorex.insurance.creation.adapter.kafka
 
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Service
 import pl.javorex.event.util.EventEnvelope
 import pl.javorex.insurance.creation.application.read.InsuranceCreationEventPublisher
 import pl.javorex.kafka.streams.event.EventEnvelopeDeserializer
@@ -14,10 +12,9 @@ import reactor.kafka.receiver.ReceiverOptions
 import reactor.kafka.receiver.ReceiverRecord
 import java.util.HashMap
 
-@Service
 class InsuranceCreationEventPublisherImpl(
-        @Value("\${kafka.bootstrap-servers}") val bootstrapServers: String,
-        @Value("\${kafka.topic.insurance-error-events}") val insuranceErrorTopic: String
+        private val bootstrapServers: String,
+        insuranceErrorTopic: String
 ) : InsuranceCreationEventPublisher {
     private val flux: ConnectableFlux<ReceiverRecord<String, EventEnvelope>> = KafkaReceiver
             .create<String, EventEnvelope>(

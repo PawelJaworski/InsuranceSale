@@ -3,6 +3,9 @@ package pl.javorex.insurance.premium.adapter
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import pl.javorex.insurance.premium.adapter.kafka.PremiumCalculationKStream
+import pl.javorex.insurance.premium.adapter.kafka.PremiumCalculationRollbackKStream
+import pl.javorex.insurance.premium.adapter.kafka.PremiumEventBusKafkaImpl
 import pl.javorex.insurance.premium.application.PremiumEventBus
 import pl.javorex.insurance.premium.application.ProposalAcceptedListener
 
@@ -10,8 +13,13 @@ import pl.javorex.insurance.premium.application.ProposalAcceptedListener
 internal class SpringConfig(
         @Value("\${kafka.bootstrap-servers}") private val bootstrapServers: String,
         @Value("\${kafka.topic.premium-events}") private val premiumTopic: String,
+        @Value("\${kafka.topic.insurance-events}") private val insuranceTopic: String,
         @Value("\${kafka.topic.insurance-error-events}") private val insuranceErrorTopic: String
 ) {
+    @Bean
+    fun premiumCalculationKStream() =
+            PremiumCalculationKStream(bootstrapServers, insuranceTopic, proposalAcceptedListener())
+
     @Bean
     fun rollbackStreamListener() : PremiumCalculationRollbackKStream {
         return PremiumCalculationRollbackKStream(bootstrapServers, premiumTopic, insuranceErrorTopic, proposalAcceptedListener())

@@ -1,4 +1,4 @@
-package pl.javorex.insurance.premium.adapter
+package pl.javorex.insurance.premium.adapter.kafka
 
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.KafkaStreams

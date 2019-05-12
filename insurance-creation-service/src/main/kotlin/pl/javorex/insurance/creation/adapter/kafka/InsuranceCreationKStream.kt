@@ -11,7 +11,7 @@ import pl.javorex.insurance.creation.application.newSagaTemplate
 import pl.javorex.kafka.streams.event.*
 
 internal class InsuranceCreationKStream(
-        private val bootstrapServers: String,
+        bootstrapServers: String,
         private val proposalEventsTopic: String,
         private val premiumEventsTopic: String,
         private val insuranceCreationEvents: String,
