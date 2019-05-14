@@ -5,7 +5,6 @@ import org.apache.kafka.common.serialization.Serde
 import pl.javorex.event.util.EventEnvelope
 import pl.javorex.util.kafka.common.serialization.JsonPOJODeserializer
 import pl.javorex.util.kafka.common.serialization.JsonPojoSerde
-import java.awt.Event
 
 class EventEnvelopeSerde(
     private val s: JsonPojoSerde<EventEnvelope> = JsonPojoSerde(EventEnvelope::class.java)
