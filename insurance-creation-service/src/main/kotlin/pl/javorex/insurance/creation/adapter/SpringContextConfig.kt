@@ -3,7 +3,7 @@ package pl.javorex.insurance.creation.adapter
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import pl.javorex.insurance.creation.adapter.kafka.InsuranceCreationEventPublisherImpl
+import pl.javorex.insurance.creation.adapter.kafka.InsuranceEventStream
 import pl.javorex.insurance.creation.adapter.kafka.InsuranceCreationKStream
 import pl.javorex.insurance.creation.application.InsuranceCreationSagaEventListener
 import pl.javorex.insurance.creation.application.InsuranceFactory
@@ -19,7 +19,7 @@ internal class SpringContextConfig(
 
     @Bean
     fun insuranceCreationEventPublisher() =
-            InsuranceCreationEventPublisherImpl(bootstrapServers, insuranceErrorTopic)
+            InsuranceEventStream(bootstrapServers, insuranceTopic, insuranceErrorTopic)
 
     @Bean
     fun insuranceCreationKStream() =

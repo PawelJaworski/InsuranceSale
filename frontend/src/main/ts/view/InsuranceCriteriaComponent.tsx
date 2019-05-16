@@ -41,6 +41,11 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
             <div className="container">
                 <div className="row centered">
                     <div className={rowCss}>
+                        <ServiceMessages url={"/insurance/created/" + PROPOSAL_ID}
+                                         serviceName="Insurance-Creation-Service"
+                                         className={successCss}/>
+                    </div>
+                    <div className={rowCss}>
                         <ErrorMessages messages = {this.state.proposalError}/>
                     </div>
                     <div className={rowCss}>
@@ -63,4 +68,5 @@ export default class InsuranceCriteriaComponent extends React.Component <{}> {
 }
 
 const rowCss = "col-md-6 offset-md-3 text-center"
+const successCss = "alert alert-success"
 const errorCss = "alert alert-danger"

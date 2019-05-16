@@ -17,6 +17,14 @@ class InsuranceCreationEventRestController(
             produces = [MediaType.TEXT_EVENT_STREAM_VALUE]
     )
     fun getErrors(@PathVariable("proposalId") proposalId: String): Publisher<String> {
-        return policyCreationEventPublisher.forProposalId(proposalId)
+        return policyCreationEventPublisher.ofErrorsForProposal(proposalId)
+    }
+
+    @GetMapping(
+        path = ["/insurance/created/{proposalId}"],
+        produces = [MediaType.TEXT_EVENT_STREAM_VALUE]
+    )
+    fun getInsuranceCreated(@PathVariable("proposalId") proposalId: String): Publisher<String> {
+        return policyCreationEventPublisher.ofInsuranceCreatedForProposal(proposalId)
     }
 }
