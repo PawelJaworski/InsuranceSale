@@ -32,6 +32,10 @@ data class EventSagaTemplate(
         }
     }
 
+    fun isNotStarted() = !events.isStarted()
+
+    fun startsWith(event: EventEnvelope) = events.starting.contains(event.eventType)
+
     fun isTimeoutOccurred(timestamp: Long) =
             events.isStarted() && events.startedTimestamp + timeout < timestamp
 
@@ -73,9 +77,6 @@ data class SagaEvents(
         val eventType = event.eventType
         when {
             starting.contains(eventType) -> {
-                if (isStarted()) {
-                    throw IllegalStateException("Saga already started for ${event.aggregateId}")
-                }
                 starting[eventType] = event
                 startedTimestamp = event.timestamp
                 version = event.aggregateVersion

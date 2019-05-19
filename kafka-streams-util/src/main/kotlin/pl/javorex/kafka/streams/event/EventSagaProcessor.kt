@@ -30,6 +30,11 @@ class EventSagaProcessor(
         }
 
        val saga = store.get(aggregateId) ?: sagaSupplier()
+
+        if (saga.isNotStarted() && !saga.startsWith(event)) {
+            return
+        }
+
        saga.mergeEvent(event)
        store.put(aggregateId, saga)
 
